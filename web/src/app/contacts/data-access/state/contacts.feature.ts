@@ -22,6 +22,8 @@ export interface ContactsState extends EntityState<ContactListItem> {
   readonly selected: ContactDetail | null;
   readonly selectedLoading: boolean;
   readonly saving: boolean;
+  /** Set once a save lands, so leaving the page does not ask about work already committed. */
+  readonly saved: boolean;
   readonly fieldErrors: Readonly<Record<string, readonly string[]>> | null;
   readonly conflict: boolean;
 }
@@ -39,6 +41,7 @@ const initialState: ContactsState = contactsAdapter.getInitialState({
   selected: null,
   selectedLoading: false,
   saving: false,
+  saved: false,
   fieldErrors: null,
   conflict: false,
 });
@@ -74,6 +77,7 @@ export const contactsFeature = createFeature({
       selected: null,
       selectedLoading: id !== null,
       saving: false,
+      saved: false,
       fieldErrors: null,
       conflict: false,
       error: null,
@@ -97,12 +101,14 @@ export const contactsFeature = createFeature({
     on(contactFormActions.submitted, (state) => ({
       ...state,
       saving: true,
+      saved: false,
       fieldErrors: null,
       conflict: false,
     })),
     on(contactsApiActions.created, contactsApiActions.updated, (state) => ({
       ...state,
       saving: false,
+      saved: true,
       fieldErrors: null,
     })),
     on(contactsApiActions.saveFailed, (state, { error }) => ({
