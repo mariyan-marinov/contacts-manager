@@ -1,0 +1,30 @@
+## .NET
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+*.user
+*.suo
+.vs/
+artifacts/
+
+## Node / Angular
+node_modules/
+dist/
+.angular/
+npm-debug.log*
+
+## Playwright
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+## Environment — .env.example is committed, .env is not
+.env
+*.env.local
+
+## Editors
+.idea/
+*.swp
+.DS_Store
