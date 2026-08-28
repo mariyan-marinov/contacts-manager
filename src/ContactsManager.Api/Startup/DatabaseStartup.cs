@@ -6,12 +6,15 @@ namespace ContactsManager.Api.Startup;
 internal static class DatabaseStartup
 {
     /// <summary>
-    /// Only outside Production: a real deployment applies migrations as a deliberate step rather
+    /// Development and Test only: a real deployment applies migrations as a deliberate step rather
     /// than as a side effect of a process starting.
     /// </summary>
     internal static async Task MigrateAndSeedAsync(this WebApplication app)
     {
-        if (app.Environment.IsProduction())
+        var eligible = app.Environment.IsDevelopment()
+            || app.Environment.IsEnvironment(TestSupportEndpoints.TestEnvironment);
+
+        if (!eligible)
         {
             return;
         }

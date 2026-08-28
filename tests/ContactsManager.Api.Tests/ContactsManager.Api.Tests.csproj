@@ -6,6 +6,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- These tests share one Postgres database and several mutate it, so they run in sequence. -->
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.11" />
     <!-- Mvc.Testing drags in an older EF Relational; pinned so the assembly versions unify. -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.11" />
