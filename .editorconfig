@@ -58,6 +58,12 @@ dotnet_naming_style.camel_case.capitalization = camel_case
 # Formatting stays a suggestion: whitespace should never fail a build
 dotnet_diagnostic.IDE0055.severity = suggestion
 
+[**/Migrations/*.cs]
+# EF writes these; they answer to the migration generator's style, not ours
+generated_code = true
+dotnet_diagnostic.IDE0005.severity = none
+dotnet_diagnostic.IDE0161.severity = none
+
 [tests/**/*.cs]
 # Test names read as sentences, which means underscores
 dotnet_naming_rule.private_fields_are_camel_case.severity = none

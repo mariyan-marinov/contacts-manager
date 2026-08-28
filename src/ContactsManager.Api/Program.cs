@@ -1,23 +1,25 @@
+using ContactsManager.Api.Startup;
+using ContactsManager.Infrastructure;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+builder.Services.AddInfrastructure(builder.Configuration.GetConnectionString("Contacts")
+    ?? throw new InvalidOperationException("Connection string 'Contacts' is not configured."));
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
-app.UseHttpsRedirection();
-
-app.UseAuthorization();
+await app.MigrateAndSeedAsync();
 
 app.MapControllers();
 
-app.Run();
+await app.RunAsync();
+
+/// <summary>Named so the API test project can reach the entry point through WebApplicationFactory.</summary>
+public partial class Program;

@@ -4,6 +4,20 @@ namespace ContactsManager.Domain.Contacts;
 
 public sealed class Contact
 {
+    /// <summary>
+    /// For EF Core only. Complex properties cannot be bound to constructor parameters, so the
+    /// materialiser needs an empty door; it assigns every property immediately afterwards, which is
+    /// what the null-forgiving operators stand for. It stays private, so no caller can reach it.
+    /// </summary>
+    private Contact()
+    {
+        Name = null!;
+        DateOfBirth = null!;
+        Address = null!;
+        Phone = null!;
+        Iban = null!;
+    }
+
     private Contact(
         ContactId id,
         PersonName name,
@@ -21,6 +35,14 @@ public sealed class Contact
     }
 
     public ContactId Id { get; private set; }
+
+    /// <summary>
+    /// Postgres already maintains a per-row version in its `xmin` system column, so optimistic
+    /// concurrency costs no column of our own. This is the one persistence-shaped property the
+    /// aggregate carries: the API hands it to clients so a stale update can be rejected rather than
+    /// silently overwriting someone else's edit.
+    /// </summary>
+    public uint Version { get; private set; }
 
     public PersonName Name { get; private set; }
 
