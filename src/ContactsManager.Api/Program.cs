@@ -1,10 +1,12 @@
 using ContactsManager.Api.Startup;
+using ContactsManager.Application;
 using ContactsManager.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
+builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration.GetConnectionString("Contacts")
     ?? throw new InvalidOperationException("Connection string 'Contacts' is not configured."));
 

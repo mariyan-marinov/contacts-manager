@@ -18,6 +18,7 @@ public static class InfrastructureServiceCollectionExtensions
 
         services.AddScoped<IContactRepository, ContactRepository>();
         services.AddScoped<IUnitOfWork>(provider => provider.GetRequiredService<ContactsDbContext>());
+        services.AddScoped<IContactReadContext>(provider => provider.GetRequiredService<ContactsDbContext>());
 
         return services;
     }

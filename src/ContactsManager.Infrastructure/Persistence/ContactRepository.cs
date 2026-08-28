@@ -12,4 +12,7 @@ internal sealed class ContactRepository(ContactsDbContext context) : IContactRep
     public void Add(Contact contact) => context.Contacts.Add(contact);
 
     public void Remove(Contact contact) => context.Contacts.Remove(contact);
+
+    public void SetExpectedVersion(Contact contact, uint version) =>
+        context.Entry(contact).Property(tracked => tracked.Version).OriginalValue = version;
 }

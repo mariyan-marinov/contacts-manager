@@ -13,4 +13,11 @@ public interface IContactRepository
     void Add(Contact contact);
 
     void Remove(Contact contact);
+
+    /// <summary>
+    /// Records the version the client last saw, so a stale update is rejected by the database in the
+    /// same statement that would have written it — rather than by a read-then-compare in application
+    /// code, which leaves a window for someone else to write in between.
+    /// </summary>
+    void SetExpectedVersion(Contact contact, uint version);
 }
