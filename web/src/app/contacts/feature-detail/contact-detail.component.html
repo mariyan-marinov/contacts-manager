@@ -1,0 +1,36 @@
+<section class="detail">
+  <header class="detail__header">
+    <h2>{{ id() ? 'Edit contact' : 'New contact' }}</h2>
+  </header>
+
+  @if (conflict()) {
+    <p-message severity="warn" styleClass="detail__banner">
+      <span>Someone else changed this contact while you were editing it.</span>
+      <p-button label="Reload it" severity="secondary" size="small" (onClick)="onReload()" />
+    </p-message>
+  }
+
+  @if (error()) {
+    <p-message severity="error" styleClass="detail__banner">{{ error() }}</p-message>
+  }
+
+  @if (loading()) {
+    <div class="detail__loading">
+      <p-progress-spinner strokeWidth="4" ariaLabel="Loading contact" />
+    </div>
+  } @else if (id() && !contact()) {
+    <p-message severity="error" styleClass="detail__banner">
+      That contact could not be loaded.
+    </p-message>
+  } @else {
+    <p-card>
+      <app-contact-form
+        [contact]="contact()"
+        [saving]="saving()"
+        [fieldErrors]="fieldErrors()"
+        (submitted)="onSubmitted($event)"
+        (cancelled)="onCancelled()"
+      />
+    </p-card>
+  }
+</section>

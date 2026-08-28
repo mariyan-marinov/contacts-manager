@@ -2,6 +2,8 @@
   <header class="contacts__header">
     <h2>Contacts</h2>
 
+    <p-button label="New contact" icon="pi pi-plus" (onClick)="onAdd()" />
+
     <p-iconfield iconPosition="left">
       <p-inputicon styleClass="pi pi-search" />
       <input
@@ -47,6 +49,7 @@
         <th pSortableColumn="city">City <p-sort-icon field="city" /></th>
         <th>Phone</th>
         <th>IBAN</th>
+        <th class="contacts__actions-column"><span class="sr-only">Actions</span></th>
       </tr>
     </ng-template>
 
@@ -57,12 +60,28 @@
         <td>{{ contact.city }}, {{ contact.country }}</td>
         <td>{{ contact.phoneNumber }}</td>
         <td class="contacts__iban">{{ contact.ibanMasked }}</td>
+        <td class="contacts__actions-column">
+          <p-button
+            icon="pi pi-pencil"
+            severity="secondary"
+            [text]="true"
+            [ariaLabel]="'Edit ' + contact.firstName + ' ' + contact.surname"
+            (onClick)="onEdit(contact)"
+          />
+          <p-button
+            icon="pi pi-trash"
+            severity="danger"
+            [text]="true"
+            [ariaLabel]="'Delete ' + contact.firstName + ' ' + contact.surname"
+            (onClick)="onDelete(contact)"
+          />
+        </td>
       </tr>
     </ng-template>
 
     <ng-template #emptymessage>
       <tr>
-        <td colspan="5">
+        <td colspan="6">
           @if (loading()) {
             Loading contacts…
           } @else {

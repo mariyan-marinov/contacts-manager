@@ -51,6 +51,26 @@ public class ContactsContractTests
     }
 
     [Fact]
+    public async Task A_nested_field_error_is_keyed_by_its_full_camel_cased_path()
+    {
+        await using var api = new ContactsApiFactory();
+        var client = await api.CreateResetClientAsync();
+        var payload = ContactPayloads.Valid();
+        var blankCity = payload with { Address = payload.Address with { City = "" } };
+
+        var response = await client.PostAsJsonAsync("/api/contacts", blankCity, Json, Cancellation);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var errors = (await Body(response)).GetProperty("errors");
+
+        // The Angular form binds errors by control path, so every segment has to be camel-cased.
+        Assert.True(
+            errors.TryGetProperty("address.city", out _),
+            $"expected 'address.city'; got: {string.Join(", ", errors.EnumerateObject().Select(field => field.Name))}");
+    }
+
+    [Fact]
     public async Task Accepts_an_iban_written_in_the_spaced_form_people_actually_use()
     {
         await using var api = new ContactsApiFactory();

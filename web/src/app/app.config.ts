@@ -9,6 +9,7 @@ import { provideEffects } from '@ngrx/effects';
 import { provideStore } from '@ngrx/store';
 import { provideStoreDevtools } from '@ngrx/store-devtools';
 import Aura from '@primeuix/themes/aura';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { providePrimeNG } from 'primeng/config';
 import { routes } from './app.routes';
 import { httpErrorInterceptor } from './core/http-error.interceptor';
@@ -19,6 +20,9 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes, withComponentInputBinding()),
     provideHttpClient(withInterceptors([httpErrorInterceptor])),
     providePrimeNG({ theme: { preset: Aura } }),
+    // The toast and the confirm dialog live in the shell, so their services belong at the root.
+    MessageService,
+    ConfirmationService,
     // Empty at the root: each feature provides its own slice and effects when its route loads.
     provideStore(),
     provideEffects(),

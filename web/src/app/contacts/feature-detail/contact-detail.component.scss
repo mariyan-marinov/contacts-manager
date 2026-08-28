@@ -1,0 +1,23 @@
+.detail {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  &__header h2 {
+    margin: 0;
+    font-size: 1.35rem;
+    font-weight: 600;
+  }
+
+  &__banner {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  &__loading {
+    display: flex;
+    justify-content: center;
+    padding: 3rem 0;
+  }
+}

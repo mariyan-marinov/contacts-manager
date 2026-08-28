@@ -6,7 +6,7 @@ import { vi } from 'vitest';
 import { ApiError } from '../../../core/api-error';
 import { ContactListItem, PagedResult } from '../contact.model';
 import { ContactsApi } from '../contacts.api';
-import { contactsApiActions, contactsPageActions } from './contacts.actions';
+import { contactFormActions, contactsApiActions, contactsPageActions } from './contacts.actions';
 import { contactsEffects } from './contacts.effects';
 import { contactsFeature } from './contacts.feature';
 
@@ -108,5 +108,71 @@ describe('debounceSearch', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe('saveContact', () => {
+  const input = {
+    firstName: 'Sanne',
+    surname: 'Bakker',
+    dateOfBirth: '1988-04-12',
+    address: {
+      street: 'Keizersgracht',
+      houseNumber: '241',
+      postalCode: '1016 EA',
+      city: 'Amsterdam',
+      country: 'NL',
+    },
+    phoneNumber: '+31 6 2145 8890',
+    iban: 'NL91ABNA0417164300',
+  };
+
+  const detail = { ...input, id: 'contact-1', version: 7 };
+
+  it('creates when nothing is selected', async () => {
+    let created = false;
+    const store = configure({
+      create: () => {
+        created = true;
+        return of(undefined);
+      },
+    });
+
+    const dispatched = firstValueFrom(run(contactsEffects.saveContact));
+    store.dispatch(contactFormActions.submitted({ contact: input }));
+
+    expect(await dispatched).toEqual(contactsApiActions.created());
+    expect(created).toBe(true);
+  });
+
+  it('updates with the version the form was loaded with', async () => {
+    let sentVersion = 0;
+    const store = configure({
+      update: (_id, _contact, version) => {
+        sentVersion = version;
+        return of(undefined);
+      },
+    });
+    store.dispatch(contactsApiActions.contactLoaded({ contact: detail }));
+
+    const dispatched = firstValueFrom(run(contactsEffects.saveContact));
+    store.dispatch(contactFormActions.submitted({ contact: input }));
+
+    expect(await dispatched).toEqual(contactsApiActions.updated());
+    expect(sentVersion).toBe(7);
+  });
+
+  it('keeps a 400 as field errors rather than a page-level message', async () => {
+    const failure: ApiError = {
+      status: 400,
+      message: 'Some of the details are not valid.',
+      fieldErrors: { 'address.city': ["'City' must not be empty."] },
+    };
+    const store = configure({ create: () => throwError(() => failure) });
+
+    const dispatched = firstValueFrom(run(contactsEffects.saveContact));
+    store.dispatch(contactFormActions.submitted({ contact: input }));
+
+    expect(await dispatched).toEqual(contactsApiActions.saveFailed({ error: failure }));
   });
 });

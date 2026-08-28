@@ -42,3 +42,33 @@ const sortFields: readonly ContactSortField[] = ['surname', 'firstName', 'city',
 export function isSortField(value: string | null | undefined): value is ContactSortField {
   return value !== null && value !== undefined && sortFields.includes(value as ContactSortField);
 }
+
+export interface ContactAddress {
+  readonly street: string;
+  readonly houseNumber: string | null;
+  readonly postalCode: string;
+  readonly city: string;
+  readonly country: string;
+}
+
+/** The detail shape: the only one carrying the full IBAN and the version needed to save. */
+export interface ContactDetail {
+  readonly id: string;
+  readonly firstName: string;
+  readonly surname: string;
+  readonly dateOfBirth: string;
+  readonly address: ContactAddress;
+  readonly phoneNumber: string;
+  readonly iban: string;
+  readonly version: number;
+}
+
+/** What the form produces, before it becomes a create or an update. */
+export interface ContactInput {
+  readonly firstName: string;
+  readonly surname: string;
+  readonly dateOfBirth: string;
+  readonly address: ContactAddress;
+  readonly phoneNumber: string;
+  readonly iban: string;
+}

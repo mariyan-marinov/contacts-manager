@@ -1,13 +1,22 @@
 import { inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
-import { catchError, debounceTime, map, of, switchMap, take } from 'rxjs';
+import { MessageService, ToastMessageOptions } from 'primeng/api';
+import { catchError, debounceTime, filter, map, of, switchMap, take, tap } from 'rxjs';
 import { ApiError } from '../../../core/api-error';
 import { ContactsApi } from '../contacts.api';
-import { contactsApiActions, contactsPageActions } from './contacts.actions';
+import { contactFormActions, contactsApiActions, contactsPageActions } from './contacts.actions';
 import { contactsFeature } from './contacts.feature';
 
 const searchDebounceMs = 300;
+const toastLifeMs = 4000;
+
+type OutcomeAction =
+  | ReturnType<typeof contactsApiActions.created>
+  | ReturnType<typeof contactsApiActions.updated>
+  | ReturnType<typeof contactsApiActions.deleted>
+  | ReturnType<typeof contactsApiActions.deleteFailed>;
 
 export const loadContacts = createEffect(
   (actions$ = inject(Actions), api = inject(ContactsApi), store = inject(Store)) =>
@@ -46,4 +55,128 @@ export const debounceSearch = createEffect(
   { functional: true },
 );
 
-export const contactsEffects = { loadContacts, debounceSearch };
+export const loadContact = createEffect(
+  (actions$ = inject(Actions), api = inject(ContactsApi), store = inject(Store)) =>
+    actions$.pipe(
+      ofType(contactFormActions.opened, contactFormActions.reloadRequested),
+      switchMap(() =>
+        store.select(contactsFeature.selectEditingId).pipe(
+          take(1),
+          // Creating a contact has nothing to fetch.
+          filter((id): id is string => id !== null),
+          switchMap((id) =>
+            api.getById(id).pipe(
+              map((contact) => contactsApiActions.contactLoaded({ contact })),
+              catchError((error: ApiError) =>
+                of(contactsApiActions.contactLoadFailed({ message: error.message })),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  { functional: true },
+);
+
+export const saveContact = createEffect(
+  (actions$ = inject(Actions), api = inject(ContactsApi), store = inject(Store)) =>
+    actions$.pipe(
+      ofType(contactFormActions.submitted),
+      switchMap(({ contact }) =>
+        store.select(contactsFeature.selectSelected).pipe(
+          take(1),
+          switchMap((selected) =>
+            selected === null
+              ? api.create(contact).pipe(
+                  map(() => contactsApiActions.created()),
+                  catchError((error: ApiError) => of(contactsApiActions.saveFailed({ error }))),
+                )
+              : // The version the form was loaded with is what makes a stale save fail.
+                api.update(selected.id, contact, selected.version).pipe(
+                  map(() => contactsApiActions.updated()),
+                  catchError((error: ApiError) => of(contactsApiActions.saveFailed({ error }))),
+                ),
+          ),
+        ),
+      ),
+    ),
+  { functional: true },
+);
+
+export const deleteContact = createEffect(
+  (actions$ = inject(Actions), api = inject(ContactsApi)) =>
+    actions$.pipe(
+      ofType(contactsPageActions.deleteConfirmed),
+      switchMap(({ id, name }) =>
+        api.remove(id).pipe(
+          map(() => contactsApiActions.deleted({ name })),
+          catchError((error: ApiError) =>
+            of(contactsApiActions.deleteFailed({ message: error.message })),
+          ),
+        ),
+      ),
+    ),
+  { functional: true },
+);
+
+/** A delete leaves the current page one row short, so the page is asked for again. */
+export const reloadAfterDelete = createEffect(
+  (actions$ = inject(Actions)) =>
+    actions$.pipe(
+      ofType(contactsApiActions.deleted),
+      map(() => contactsPageActions.refreshed()),
+    ),
+  { functional: true },
+);
+
+export const returnToListAfterSave = createEffect(
+  (actions$ = inject(Actions), router = inject(Router)) =>
+    actions$.pipe(
+      ofType(contactsApiActions.created, contactsApiActions.updated),
+      tap(() => void router.navigate(['/contacts'])),
+    ),
+  { functional: true, dispatch: false },
+);
+
+export const announceOutcome = createEffect(
+  (actions$ = inject(Actions), messages = inject(MessageService)) =>
+    actions$.pipe(
+      ofType(
+        contactsApiActions.created,
+        contactsApiActions.updated,
+        contactsApiActions.deleted,
+        contactsApiActions.deleteFailed,
+      ),
+      tap((action: OutcomeAction) => messages.add(toastFor(action))),
+    ),
+  { functional: true, dispatch: false },
+);
+
+export const contactsEffects = {
+  loadContacts,
+  debounceSearch,
+  loadContact,
+  saveContact,
+  deleteContact,
+  reloadAfterDelete,
+  returnToListAfterSave,
+  announceOutcome,
+};
+
+function toastFor(action: OutcomeAction): ToastMessageOptions {
+  switch (action.type) {
+    case contactsApiActions.created.type:
+      return { severity: 'success', summary: 'Contact added', life: toastLifeMs };
+    case contactsApiActions.updated.type:
+      return { severity: 'success', summary: 'Changes saved', life: toastLifeMs };
+    case contactsApiActions.deleted.type:
+      return { severity: 'success', summary: `${action.name} deleted`, life: toastLifeMs };
+    default:
+      return {
+        severity: 'error',
+        summary: 'Could not delete',
+        detail: action.message,
+        life: toastLifeMs,
+      };
+  }
+}

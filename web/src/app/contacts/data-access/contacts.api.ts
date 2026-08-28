@@ -1,7 +1,13 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ContactListItem, ContactQuery, PagedResult } from './contact.model';
+import {
+  ContactDetail,
+  ContactInput,
+  ContactListItem,
+  ContactQuery,
+  PagedResult,
+} from './contact.model';
 
 /** The only place in the app that talks HTTP. Effects call this; components never do. */
 @Injectable({ providedIn: 'root' })
@@ -22,5 +28,22 @@ export class ContactsApi {
     }
 
     return this.http.get<PagedResult<ContactListItem>>(ContactsApi.endpoint, { params });
+  }
+
+  /** The one request that returns an unmasked IBAN, and only for the contact being edited. */
+  getById(id: string): Observable<ContactDetail> {
+    return this.http.get<ContactDetail>(`${ContactsApi.endpoint}/${id}`);
+  }
+
+  create(contact: ContactInput): Observable<void> {
+    return this.http.post<void>(ContactsApi.endpoint, contact);
+  }
+
+  update(id: string, contact: ContactInput, version: number): Observable<void> {
+    return this.http.put<void>(`${ContactsApi.endpoint}/${id}`, { ...contact, version });
+  }
+
+  remove(id: string): Observable<void> {
+    return this.http.delete<void>(`${ContactsApi.endpoint}/${id}`);
   }
 }

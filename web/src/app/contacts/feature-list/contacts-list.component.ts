@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Store } from '@ngrx/store';
+import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
@@ -9,6 +10,7 @@ import { MessageModule } from 'primeng/message';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { parseContactQuery, toQueryParams } from '../data-access/contact-query-params';
 import {
+  ContactListItem,
   ContactSortField,
   SortDirection,
   defaultContactQuery,
@@ -35,6 +37,7 @@ export class ContactsListComponent {
   private readonly store = inject(Store);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly confirmation = inject(ConfirmationService);
 
   protected readonly contacts = this.store.selectSignal(contactsFeature.selectAllContacts);
   protected readonly total = this.store.selectSignal(contactsFeature.selectTotal);
@@ -83,6 +86,28 @@ export class ContactsListComponent {
 
   protected onRetry(): void {
     this.store.dispatch(contactsPageActions.refreshed());
+  }
+
+  protected onAdd(): void {
+    void this.router.navigate(['/contacts/new']);
+  }
+
+  protected onEdit(contact: ContactListItem): void {
+    void this.router.navigate(['/contacts', contact.id]);
+  }
+
+  protected onDelete(contact: ContactListItem): void {
+    const name = `${contact.firstName} ${contact.surname}`;
+
+    this.confirmation.confirm({
+      header: 'Delete this contact?',
+      message: `${name} will be removed permanently.`,
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Delete',
+      rejectLabel: 'Cancel',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => this.store.dispatch(contactsPageActions.deleteConfirmed({ id: contact.id, name })),
+    });
   }
 }
 

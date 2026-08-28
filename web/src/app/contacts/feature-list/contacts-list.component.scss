@@ -28,3 +28,17 @@
     letter-spacing: 0.02em;
   }
 }
+
+.contacts__actions-column {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}

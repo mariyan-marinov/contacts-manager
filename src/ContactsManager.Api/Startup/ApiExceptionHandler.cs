@@ -74,9 +74,20 @@ internal sealed class ApiExceptionHandler(
 
     private static Dictionary<string, string[]> GroupByField(ValidationException exception) =>
         exception.Errors
-            .GroupBy(failure => failure.PropertyName, StringComparer.Ordinal)
+            .GroupBy(failure => CamelCasePath(failure.PropertyName), StringComparer.Ordinal)
             .ToDictionary(
                 field => field.Key,
                 field => field.Select(failure => failure.ErrorMessage).ToArray(),
                 StringComparer.Ordinal);
+
+    /// <summary>
+    /// FluentValidation names a nested rule `Address.City`, and the JSON naming policy only lowers the
+    /// first character of a key — which would leave clients a mixed `address.City`. Each segment is
+    /// camel-cased here so the whole path matches the field names in the request body.
+    /// </summary>
+    private static string CamelCasePath(string propertyName) =>
+        string.Join('.', propertyName.Split('.').Select(CamelCase));
+
+    private static string CamelCase(string segment) =>
+        segment.Length == 0 ? segment : char.ToLowerInvariant(segment[0]) + segment[1..];
 }
