@@ -1,0 +1,17 @@
+.app-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--p-content-border-color);
+
+  h1 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+}
+
+.app-main {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 1.5rem;
+}

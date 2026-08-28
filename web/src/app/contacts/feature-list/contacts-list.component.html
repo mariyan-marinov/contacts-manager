@@ -1,0 +1,75 @@
+<section class="contacts">
+  <header class="contacts__header">
+    <h2>Contacts</h2>
+
+    <p-iconfield iconPosition="left">
+      <p-inputicon styleClass="pi pi-search" />
+      <input
+        #searchBox
+        pInputText
+        type="search"
+        placeholder="Search name or city"
+        aria-label="Search contacts"
+        [value]="searchTerm()"
+        (input)="onSearch(searchBox.value)"
+      />
+    </p-iconfield>
+  </header>
+
+  @if (error()) {
+    <p-message severity="error" styleClass="contacts__error">
+      <span>{{ error() }}</span>
+      <p-button label="Try again" severity="secondary" size="small" (onClick)="onRetry()" />
+    </p-message>
+  }
+
+  <p-table
+    [value]="contacts()"
+    [lazy]="true"
+    [lazyLoadOnInit]="false"
+    (onLazyLoad)="onLazyLoad($event)"
+    [paginator]="true"
+    [rows]="query().size"
+    [first]="firstRow()"
+    [totalRecords]="total()"
+    [loading]="loading()"
+    [rowsPerPageOptions]="[10, 20, 50]"
+    [sortField]="query().sort"
+    [sortOrder]="query().direction === 'desc' ? -1 : 1"
+    dataKey="id"
+    currentPageReportTemplate="{first}–{last} of {totalRecords}"
+    [showCurrentPageReport]="true"
+  >
+    <ng-template #header>
+      <tr>
+        <th pSortableColumn="surname">Surname <p-sort-icon field="surname" /></th>
+        <th pSortableColumn="firstName">First name <p-sort-icon field="firstName" /></th>
+        <th pSortableColumn="city">City <p-sort-icon field="city" /></th>
+        <th>Phone</th>
+        <th>IBAN</th>
+      </tr>
+    </ng-template>
+
+    <ng-template #body let-contact>
+      <tr>
+        <td>{{ contact.surname }}</td>
+        <td>{{ contact.firstName }}</td>
+        <td>{{ contact.city }}, {{ contact.country }}</td>
+        <td>{{ contact.phoneNumber }}</td>
+        <td class="contacts__iban">{{ contact.ibanMasked }}</td>
+      </tr>
+    </ng-template>
+
+    <ng-template #emptymessage>
+      <tr>
+        <td colspan="5">
+          @if (loading()) {
+            Loading contacts…
+          } @else {
+            No contacts match this search.
+          }
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</section>
