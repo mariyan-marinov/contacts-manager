@@ -14,7 +14,7 @@ builder.Services.AddControllers();
 builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.DictionaryKeyPolicy = JsonNamingPolicy.CamelCase);
 
-builder.Services.AddOpenApi();
+builder.Services.AddConfiguredOpenApi();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 builder.Services.AddConfiguredCors(builder.Configuration);
@@ -32,6 +32,15 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.MapScalarApiReference();
+
+    // Swagger UI over the same document ASP.NET Core already generates - the UI package only, so
+    // there is no second generator to keep in step with the first.
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/openapi/v1.json", "Contacts Manager v1");
+        options.RoutePrefix = "swagger";
+        options.DocumentTitle = "Contacts Manager API";
+    });
 }
 
 await app.MigrateAndSeedAsync();

@@ -10,6 +10,8 @@
          2.12.2 patches it and stays on the 2.x line ASP.NET Core 10 is built against. -->
     <PackageReference Include="Microsoft.OpenApi" Version="2.12.2" />
     <PackageReference Include="Scalar.AspNetCore" Version="2.17.1" />
+    <!-- The Swagger UI assets only. Document generation stays with Microsoft.AspNetCore.OpenApi. -->
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.2.3" />
   </ItemGroup>
 
   <ItemGroup>

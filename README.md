@@ -20,6 +20,30 @@ sitting.
 
 ## Running it
 
+All three at once — Postgres, the API and the dev server — in one terminal:
+
+```powershell
+./scripts/run.ps1             # Windows
+```
+
+```bash
+./scripts/run.sh              # Linux, macOS, Git Bash
+```
+
+The script writes `.env` if it is missing, waits for the database health check before starting the
+API and for the API before starting the dev server, runs `npm ci` the first time, opens the app in
+your browser, and stops both processes on Ctrl+C. The container is left running unless you pass
+`-StopDb` / `--stop-db`.
+
+| Flag | |
+|---|---|
+| `-NoBrowser` / `--no-browser` | Do not open a browser |
+| `-Environment Test` / `--environment Test` | Run the API in the environment the e2e suite uses |
+| `-SkipInstall` / `--skip-install` | Never run `npm ci` |
+| `-StopDb` / `--stop-db` | Stop the container on exit too |
+
+Or by hand, three steps:
+
 ```bash
 cp .env.example .env          # development credentials for Postgres
 docker compose up -d db       # start PostgreSQL
@@ -28,8 +52,18 @@ dotnet run --project src/ContactsManager.Api
 ```
 
 The API listens on <http://localhost:5272>. It applies migrations and seeds twelve contacts on
-startup in the Development and Test environments, so there is nothing else to set up. The OpenAPI
-document is at `/openapi/v1.json` and a browsable version at `/scalar`.
+startup in the Development and Test environments, so there is nothing else to set up.
+
+In Development the OpenAPI document is at `/openapi/v1.json`, with two readers over the same
+document: Swagger UI at <http://localhost:5272/swagger> and Scalar at
+<http://localhost:5272/scalar>. Only the Swagger UI assets are referenced — ASP.NET Core generates
+the document itself, so there is no second generator to keep in step with the first.
+
+Every request body, response and query parameter carries a worked example, written once per shape in
+[OpenApiSetup.cs](src/ContactsManager.Api/Startup/OpenApiSetup.cs) and attached by a schema
+transformer, so the same contact appears wherever a shape does. The error examples are per status
+rather than per schema: `400` shows a field-keyed validation payload, `404` and `409` share the
+`ProblemDetails` schema but read differently.
 
 In a second terminal:
 
