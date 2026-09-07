@@ -1,17 +1,68 @@
-.app-header {
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid var(--p-content-border-color);
+.skip-link {
+  position: absolute;
+  inset-inline-start: 0.75rem;
+  inset-block-start: -4rem;
+  z-index: 1200;
+  padding: 0.6rem 1rem;
+  font-weight: 600;
+  background: var(--p-primary-color);
+  color: var(--p-primary-contrast-color);
+  border-radius: 0 0 0.6rem 0.6rem;
+  transition: inset-block-start 0.15s ease;
 
-  h1 {
+  &:focus-visible {
+    inset-block-start: 0;
+  }
+}
+
+.app-header {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 100;
+  border-block-end: 1px solid var(--app-border);
+  background: light-dark(rgb(255 255 255 / 0.82), rgb(11 15 26 / 0.82));
+  backdrop-filter: saturate(1.6) blur(12px);
+
+  &__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    height: var(--app-header-height);
+    max-width: var(--app-content-width);
+    margin-inline: auto;
+    padding-inline: var(--app-gutter);
+  }
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  border-radius: 0.6rem;
+
+  &__mark {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.6rem;
+    background: linear-gradient(135deg, var(--p-primary-500), var(--p-primary-700));
+    color: #fff;
+    font-size: 0.9rem;
+    box-shadow: 0 2px 6px -1px color-mix(in srgb, var(--p-primary-color), transparent 60%);
+  }
+
+  &__name {
     margin: 0;
-    font-size: 1.1rem;
-    font-weight: 600;
-    letter-spacing: 0.01em;
+    font-size: 1rem;
+    font-weight: 650;
+    letter-spacing: -0.01em;
   }
 }
 
 .app-main {
-  max-width: 72rem;
-  margin: 0 auto;
-  padding: 1.5rem;
+  max-width: var(--app-content-width);
+  margin-inline: auto;
+  padding: clamp(1.25rem, 3vw, 2rem) var(--app-gutter) 4rem;
 }

@@ -6,12 +6,11 @@ import {
   input,
   viewChild,
 } from '@angular/core';
-import { Router } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { ButtonModule } from 'primeng/button';
-import { CardModule } from 'primeng/card';
 import { MessageModule } from 'primeng/message';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { TooltipModule } from 'primeng/tooltip';
 import { ContactInput } from '../data-access/contact.model';
 import { contactFormActions } from '../data-access/state/contacts.actions';
 import { contactsFeature } from '../data-access/state/contacts.feature';
@@ -22,10 +21,10 @@ import { ContactFormComponent } from '../ui/contact-form.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ButtonModule,
-    CardModule,
     ContactFormComponent,
     MessageModule,
     ProgressSpinnerModule,
+    TooltipModule,
   ],
   templateUrl: './contact-detail.component.html',
   styleUrl: './contact-detail.component.scss',
@@ -35,7 +34,6 @@ export class ContactDetailComponent implements OnInit {
   readonly id = input<string | undefined>();
 
   private readonly store = inject(Store);
-  private readonly router = inject(Router);
   private readonly form = viewChild(ContactFormComponent);
 
   protected readonly contact = this.store.selectSignal(contactsFeature.selectSelected);
@@ -64,7 +62,7 @@ export class ContactDetailComponent implements OnInit {
   }
 
   protected onCancelled(): void {
-    void this.router.navigate(['/contacts']);
+    this.store.dispatch(contactFormActions.abandoned());
   }
 
   protected onReload(): void {

@@ -1,23 +1,47 @@
 .detail {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.25rem;
+  max-width: 56rem;
 
-  &__header h2 {
-    margin: 0;
-    font-size: 1.35rem;
-    font-weight: 600;
+  &__head {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  &__titles {
+    min-width: 0;
+    padding-block-start: 0.15rem;
   }
 
   &__banner {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 0.75rem;
   }
 
+  &__banner-text {
+    flex: 1 1 14rem;
+  }
+
   &__loading {
     display: flex;
-    justify-content: center;
-    padding: 3rem 0;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 4rem 1rem;
+    color: var(--p-text-muted-color);
+
+    p {
+      margin: 0;
+      font-size: 0.9rem;
+    }
+  }
+
+  &__panel {
+    padding: 0;
+    overflow: hidden;
   }
 }

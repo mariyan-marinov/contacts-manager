@@ -37,6 +37,18 @@ export const defaultContactQuery: ContactQuery = {
   size: 20,
 };
 
+/** What a lazy-load event from the table can speak about: paging and sorting, never the search. */
+export type ContactListView = Pick<ContactQuery, 'page' | 'size' | 'sort' | 'direction'>;
+
+export function isSameListView(left: ContactListView, right: ContactListView): boolean {
+  return (
+    left.page === right.page &&
+    left.size === right.size &&
+    left.sort === right.sort &&
+    left.direction === right.direction
+  );
+}
+
 const sortFields: readonly ContactSortField[] = ['surname', 'firstName', 'city', 'dateOfBirth'];
 
 export function isSortField(value: string | null | undefined): value is ContactSortField {

@@ -1,67 +1,116 @@
 <form class="contact-form" [formGroup]="form" (ngSubmit)="onSubmit()">
-  <div class="contact-form__grid">
-    <label class="field">
-      <span class="field__label">First name</span>
-      <input pInputText formControlName="firstName" (input)="onFieldInput('firstName')" />
-      @for (message of messagesFor('firstName'); track message) {
-        <p-message severity="error" variant="simple" size="small">{{ message }}</p-message>
-      }
-    </label>
-
-    <label class="field">
-      <span class="field__label">Surname</span>
-      <input pInputText formControlName="surname" (input)="onFieldInput('surname')" />
-      @for (message of messagesFor('surname'); track message) {
-        <p-message severity="error" variant="simple" size="small">{{ message }}</p-message>
-      }
-    </label>
-
-    <div class="field">
-      <label class="field__label" for="dateOfBirth">Date of birth</label>
-      <p-datepicker
-        inputId="dateOfBirth"
-        formControlName="dateOfBirth"
-        dateFormat="yy-mm-dd"
-        [maxDate]="today"
-        [minDate]="earliest"
-        [showIcon]="true"
-        appendTo="body"
-      />
-      @for (message of messagesFor('dateOfBirth'); track message) {
-        <p-message severity="error" variant="simple" size="small">{{ message }}</p-message>
-      }
+  <section class="contact-form__section">
+    <div class="contact-form__section-head">
+      <h3 class="contact-form__section-title">Personal details</h3>
     </div>
 
-    <label class="field">
-      <span class="field__label">Phone number</span>
-      <input pInputText formControlName="phoneNumber" (input)="onFieldInput('phoneNumber')" />
-      @for (message of messagesFor('phoneNumber'); track message) {
-        <p-message severity="error" variant="simple" size="small">{{ message }}</p-message>
-      }
-    </label>
+    <div class="contact-form__grid">
+      <label class="field field--span-6">
+        <span class="field__label"
+          >First name <span aria-hidden="true" class="field__required">*</span></span
+        >
+        <input
+          pInputText
+          formControlName="firstName"
+          autocomplete="given-name"
+          (input)="onFieldInput('firstName')"
+        />
+        @for (message of messagesFor('firstName'); track message) {
+          <p-message severity="error" variant="simple" size="small">{{ message }}</p-message>
+        }
+      </label>
 
-    <label class="field field--wide">
-      <span class="field__label">IBAN</span>
-      <input pInputText formControlName="iban" (input)="onFieldInput('iban')" />
-      @for (message of messagesFor('iban'); track message) {
-        <p-message severity="error" variant="simple" size="small">{{ message }}</p-message>
-      }
-    </label>
-  </div>
+      <label class="field field--span-6">
+        <span class="field__label"
+          >Surname <span aria-hidden="true" class="field__required">*</span></span
+        >
+        <input
+          pInputText
+          formControlName="surname"
+          autocomplete="family-name"
+          (input)="onFieldInput('surname')"
+        />
+        @for (message of messagesFor('surname'); track message) {
+          <p-message severity="error" variant="simple" size="small">{{ message }}</p-message>
+        }
+      </label>
 
-  <fieldset class="contact-form__address" formGroupName="address">
-    <legend>Address</legend>
+      <div class="field field--span-6">
+        <label class="field__label" for="dateOfBirth">
+          Date of birth <span aria-hidden="true" class="field__required">*</span>
+        </label>
+        <p-datepicker
+          inputId="dateOfBirth"
+          formControlName="dateOfBirth"
+          dateFormat="yy-mm-dd"
+          [maxDate]="today"
+          [minDate]="earliest"
+          [showIcon]="true"
+          appendTo="body"
+        />
+        <small class="field__hint">Format: 2001-04-30</small>
+        @for (message of messagesFor('dateOfBirth'); track message) {
+          <p-message severity="error" variant="simple" size="small">{{ message }}</p-message>
+        }
+      </div>
+
+      <label class="field field--span-6">
+        <span class="field__label"
+          >Phone number <span aria-hidden="true" class="field__required">*</span></span
+        >
+        <input
+          pInputText
+          formControlName="phoneNumber"
+          inputmode="tel"
+          autocomplete="tel"
+          (input)="onFieldInput('phoneNumber')"
+        />
+        @for (message of messagesFor('phoneNumber'); track message) {
+          <p-message severity="error" variant="simple" size="small">{{ message }}</p-message>
+        }
+      </label>
+
+      <label class="field field--span-12">
+        <span class="field__label"
+          >IBAN <span aria-hidden="true" class="field__required">*</span></span
+        >
+        <input
+          pInputText
+          formControlName="iban"
+          spellcheck="false"
+          autocapitalize="characters"
+          class="contact-form__iban"
+          (input)="onFieldInput('iban')"
+        />
+        @for (message of messagesFor('iban'); track message) {
+          <p-message severity="error" variant="simple" size="small">{{ message }}</p-message>
+        }
+      </label>
+    </div>
+  </section>
+
+  <section class="contact-form__section" formGroupName="address">
+    <div class="contact-form__section-head">
+      <h3 class="contact-form__section-title">Address</h3>
+    </div>
 
     <div class="contact-form__grid">
-      <label class="field field--wide">
-        <span class="field__label">Street</span>
-        <input pInputText formControlName="street" (input)="onFieldInput('address.street')" />
+      <label class="field field--span-9">
+        <span class="field__label"
+          >Street <span aria-hidden="true" class="field__required">*</span></span
+        >
+        <input
+          pInputText
+          formControlName="street"
+          autocomplete="address-line1"
+          (input)="onFieldInput('address.street')"
+        />
         @for (message of messagesFor('address.street'); track message) {
           <p-message severity="error" variant="simple" size="small">{{ message }}</p-message>
         }
       </label>
 
-      <label class="field">
+      <label class="field field--span-3">
         <span class="field__label">House number</span>
         <input
           pInputText
@@ -73,11 +122,14 @@
         }
       </label>
 
-      <label class="field">
-        <span class="field__label">Postal code</span>
+      <label class="field field--span-3">
+        <span class="field__label"
+          >Postal code <span aria-hidden="true" class="field__required">*</span></span
+        >
         <input
           pInputText
           formControlName="postalCode"
+          autocomplete="postal-code"
           (input)="onFieldInput('address.postalCode')"
         />
         @for (message of messagesFor('address.postalCode'); track message) {
@@ -85,16 +137,25 @@
         }
       </label>
 
-      <label class="field">
-        <span class="field__label">City</span>
-        <input pInputText formControlName="city" (input)="onFieldInput('address.city')" />
+      <label class="field field--span-5">
+        <span class="field__label"
+          >City <span aria-hidden="true" class="field__required">*</span></span
+        >
+        <input
+          pInputText
+          formControlName="city"
+          autocomplete="address-level2"
+          (input)="onFieldInput('address.city')"
+        />
         @for (message of messagesFor('address.city'); track message) {
           <p-message severity="error" variant="simple" size="small">{{ message }}</p-message>
         }
       </label>
 
-      <div class="field">
-        <label class="field__label" for="country">Country</label>
+      <div class="field field--span-4">
+        <label class="field__label" for="country">
+          Country <span aria-hidden="true" class="field__required">*</span>
+        </label>
         <p-select
           inputId="country"
           formControlName="country"
@@ -111,23 +172,25 @@
         }
       </div>
     </div>
-  </fieldset>
+  </section>
 
   <footer class="contact-form__actions">
+    <span class="contact-form__required-note" aria-hidden="true">* Required</span>
+
+    <p-button
+      type="button"
+      label="Cancel"
+      severity="secondary"
+      [outlined]="true"
+      [disabled]="saving()"
+      (onClick)="onCancel()"
+    />
     <p-button
       type="submit"
       label="Save"
       icon="pi pi-check"
       [loading]="saving()"
       [disabled]="saving()"
-    />
-    <p-button
-      type="button"
-      label="Cancel"
-      severity="secondary"
-      [text]="true"
-      [disabled]="saving()"
-      (onClick)="onCancel()"
     />
   </footer>
 </form>

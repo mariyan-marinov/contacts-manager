@@ -8,12 +8,15 @@ import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
+import { TooltipModule } from 'primeng/tooltip';
 import { parseContactQuery, toQueryParams } from '../data-access/contact-query-params';
 import {
   ContactListItem,
+  ContactListView,
   ContactSortField,
   SortDirection,
   defaultContactQuery,
+  isSameListView,
   isSortField,
 } from '../data-access/contact.model';
 import { contactsPageActions } from '../data-access/state/contacts.actions';
@@ -29,6 +32,7 @@ import { contactsFeature } from '../data-access/state/contacts.feature';
     InputTextModule,
     MessageModule,
     TableModule,
+    TooltipModule,
   ],
   templateUrl: './contacts-list.component.html',
   styleUrl: './contacts-list.component.scss',
@@ -66,17 +70,29 @@ export class ContactsListComponent {
     });
   }
 
+  /**
+   * The table announces its paging and sorting whenever one of those inputs settles, not only
+   * when the user changes something — on a single page load it repeats the state the store just
+   * gave it four times over. Each repeat used to become a request that the next one cancelled,
+   * so only a genuine change is turned into an action.
+   */
   protected onLazyLoad(event: TableLazyLoadEvent): void {
     const size = event.rows ?? defaultContactQuery.size;
     const sortField = Array.isArray(event.sortField) ? event.sortField[0] : event.sortField;
     const sort: ContactSortField = isSortField(sortField) ? sortField : defaultContactQuery.sort;
     const direction: SortDirection = event.sortOrder === -1 ? 'desc' : 'asc';
+    const view: ContactListView = {
+      page: Math.floor((event.first ?? 0) / size) + 1,
+      size,
+      sort,
+      direction,
+    };
 
-    this.store.dispatch(
-      contactsPageActions.queryChanged({
-        query: { page: Math.floor((event.first ?? 0) / size) + 1, size, sort, direction },
-      }),
-    );
+    if (isSameListView(view, this.query())) {
+      return;
+    }
+
+    this.store.dispatch(contactsPageActions.queryChanged({ query: view }));
   }
 
   protected onSearch(term: string): void {
@@ -106,8 +122,10 @@ export class ContactsListComponent {
       acceptLabel: 'Delete',
       rejectLabel: 'Cancel',
       acceptButtonStyleClass: 'p-button-danger',
-      accept: () => this.store.dispatch(contactsPageActions.deleteConfirmed({ id: contact.id, name })),
+      // Backing out is the safe default, so it should not compete with the destructive button.
+      rejectButtonStyleClass: 'p-button-outlined p-button-secondary',
+      accept: () =>
+        this.store.dispatch(contactsPageActions.deleteConfirmed({ id: contact.id, name })),
     });
   }
 }
-

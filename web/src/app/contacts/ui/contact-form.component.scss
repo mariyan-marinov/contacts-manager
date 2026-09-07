@@ -1,33 +1,57 @@
 .contact-form {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
 
-  &__grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-    gap: 1rem;
+  &__section {
+    padding: 1.5rem;
+
+    & + & {
+      border-block-start: 1px solid var(--app-border);
+    }
   }
 
-  &__address {
-    margin: 0;
-    padding: 1rem 1.25rem 1.25rem;
-    border: 1px solid var(--p-content-border-color);
-    border-radius: var(--p-content-border-radius);
+  &__section-head {
+    margin-block-end: 1.25rem;
+  }
 
-    legend {
-      padding: 0 0.4rem;
-      font-size: 0.8rem;
-      font-weight: 600;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--p-text-muted-color);
-    }
+  &__section-title {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--p-text-muted-color);
+  }
+
+  /* Twelve columns, so a house number can sit next to a street without either
+     guessing at the other's width. Everything collapses to one column when the
+     panel is too narrow to keep the pairs readable. */
+  &__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.1rem 1rem;
+  }
+
+  &__iban {
+    font-family: var(--app-font-mono);
+    letter-spacing: 0.04em;
   }
 
   &__actions {
     display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
     gap: 0.75rem;
+    padding: 1.1rem 1.5rem;
+    border-block-start: 1px solid var(--app-border);
+    background: light-dark(var(--p-surface-50), var(--p-surface-950));
+  }
+
+  &__required-note {
+    margin-inline-end: auto;
+    font-size: 0.8rem;
+    color: var(--p-text-muted-color);
   }
 }
 
@@ -35,14 +59,77 @@
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
-
-  &--wide {
-    grid-column: 1 / -1;
-  }
+  min-width: 0;
 
   &__label {
-    font-size: 0.85rem;
-    font-weight: 500;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: light-dark(var(--p-surface-600), var(--p-surface-300));
+  }
+
+  &__required {
+    color: var(--p-red-500);
+  }
+
+  &__hint {
+    font-size: 0.75rem;
     color: var(--p-text-muted-color);
+  }
+}
+
+@media (min-width: 48rem) {
+  .contact-form__grid {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+
+  .field--span-3 {
+    grid-column: span 3;
+  }
+
+  .field--span-4 {
+    grid-column: span 4;
+  }
+
+  .field--span-5 {
+    grid-column: span 5;
+  }
+
+  .field--span-6 {
+    grid-column: span 6;
+  }
+
+  .field--span-9 {
+    grid-column: span 9;
+  }
+
+  .field--span-12 {
+    grid-column: span 12;
+  }
+}
+
+/* Controls fill their column so the grid's edges line up. Scoped to this
+   component: the list's paginator has a select of its own that must stay
+   its natural size. PrimeNG renders these inside its own templates, out of
+   reach of the component's scoping. */
+:host ::ng-deep {
+  .p-datepicker,
+  .p-select,
+  .p-inputtext {
+    width: 100%;
+  }
+
+  /* A field the user has touched and left invalid should look invalid, not
+     only carry a message underneath it. */
+  input.p-inputtext.ng-invalid.ng-touched,
+  .p-datepicker.ng-invalid.ng-touched .p-inputtext,
+  .p-select.ng-invalid.ng-touched {
+    border-color: var(--p-form-field-invalid-border-color);
+  }
+
+  /* A simple message is inline text; it should read as help under the field
+     rather than as another boxed control. */
+  .p-message-simple {
+    font-size: 0.78rem;
+    line-height: 1.35;
   }
 }

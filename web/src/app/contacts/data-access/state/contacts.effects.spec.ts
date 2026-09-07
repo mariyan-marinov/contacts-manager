@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { Router, provideRouter } from '@angular/router';
 import { provideEffects } from '@ngrx/effects';
 import { Store, provideState, provideStore } from '@ngrx/store';
 import { Observable, firstValueFrom, of, throwError } from 'rxjs';
@@ -20,6 +21,7 @@ const emptyPage: PagedResult<ContactListItem> = { items: [], total: 0, page: 1, 
 function configure(api: Partial<ContactsApi>): Store {
   TestBed.configureTestingModule({
     providers: [
+      provideRouter([]),
       provideStore(),
       provideState(contactsFeature),
       provideEffects(),
@@ -174,5 +176,42 @@ describe('saveContact', () => {
     store.dispatch(contactFormActions.submitted({ contact: input }));
 
     expect(await dispatched).toEqual(contactsApiActions.saveFailed({ error: failure }));
+  });
+});
+
+describe('returnToList', () => {
+  /**
+   * Going back to a bare /contacts would let the URL fall back to the defaults, which is how a
+   * page size the user had chosen used to turn back into twenty the moment they saved.
+   */
+  function navigationAfter(action: unknown) {
+    const store = configure({ list: () => of(emptyPage) });
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+
+    store.dispatch(
+      contactsPageActions.queryChanged({ query: { page: 3, size: 10, search: 'ber' } }),
+    );
+
+    const subscription = run(contactsEffects.returnToList).subscribe();
+    store.dispatch(action as never);
+    subscription.unsubscribe();
+
+    return navigate;
+  }
+
+  it('carries the query the list was showing back into the URL after a save', () => {
+    const navigate = navigationAfter(contactsApiActions.updated());
+
+    expect(navigate).toHaveBeenCalledWith(['/contacts'], {
+      queryParams: { sort: 'surname', direction: 'asc', page: 3, size: 10, search: 'ber' },
+    });
+  });
+
+  it('does the same when the form is abandoned rather than saved', () => {
+    const navigate = navigationAfter(contactFormActions.abandoned());
+
+    expect(navigate).toHaveBeenCalledWith(['/contacts'], {
+      queryParams: { sort: 'surname', direction: 'asc', page: 3, size: 10, search: 'ber' },
+    });
   });
 });

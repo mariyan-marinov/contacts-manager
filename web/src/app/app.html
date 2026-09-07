@@ -1,10 +1,29 @@
+<a class="skip-link" href="#main">Skip to content</a>
+
 <header class="app-header">
-  <h1><a routerLink="/contacts">Contacts Manager</a></h1>
+  <div class="app-header__inner">
+    <a class="brand" routerLink="/contacts">
+      <span class="brand__mark" aria-hidden="true"><i class="pi pi-address-book"></i></span>
+      <h1 class="brand__name">Contacts Manager</h1>
+    </a>
+
+    <p-button
+      type="button"
+      severity="secondary"
+      [text]="true"
+      [rounded]="true"
+      [icon]="theme.isDark() ? 'pi pi-sun' : 'pi pi-moon'"
+      [ariaLabel]="theme.isDark() ? 'Switch to the light theme' : 'Switch to the dark theme'"
+      pTooltip="Toggle theme"
+      tooltipPosition="bottom"
+      (onClick)="theme.toggle()"
+    />
+  </div>
 </header>
 
-<main class="app-main">
+<main class="app-main" id="main">
   <router-outlet />
 </main>
 
-<p-toast position="bottom-right" />
+<p-toast position="top-right" />
 <p-confirmdialog />

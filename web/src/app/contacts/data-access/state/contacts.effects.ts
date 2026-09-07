@@ -5,6 +5,7 @@ import { Store } from '@ngrx/store';
 import { MessageService, ToastMessageOptions } from 'primeng/api';
 import { catchError, debounceTime, filter, map, of, switchMap, take, tap } from 'rxjs';
 import { ApiError } from '../../../core/api-error';
+import { toQueryParams } from '../contact-query-params';
 import { ContactsApi } from '../contacts.api';
 import { contactFormActions, contactsApiActions, contactsPageActions } from './contacts.actions';
 import { contactsFeature } from './contacts.feature';
@@ -129,11 +130,16 @@ export const reloadAfterDelete = createEffect(
   { functional: true },
 );
 
-export const returnToListAfterSave = createEffect(
-  (actions$ = inject(Actions), router = inject(Router)) =>
+/**
+ * Leaving the form returns to the list the user came from, not to a fresh one: the query goes
+ * back into the URL, so the page size they chose and the search they typed are still there.
+ */
+export const returnToList = createEffect(
+  (actions$ = inject(Actions), router = inject(Router), store = inject(Store)) =>
     actions$.pipe(
-      ofType(contactsApiActions.created, contactsApiActions.updated),
-      tap(() => void router.navigate(['/contacts'])),
+      ofType(contactsApiActions.created, contactsApiActions.updated, contactFormActions.abandoned),
+      switchMap(() => store.select(contactsFeature.selectQuery).pipe(take(1))),
+      tap((query) => void router.navigate(['/contacts'], { queryParams: toQueryParams(query) })),
     ),
   { functional: true, dispatch: false },
 );
@@ -159,7 +165,7 @@ export const contactsEffects = {
   saveContact,
   deleteContact,
   reloadAfterDelete,
-  returnToListAfterSave,
+  returnToList,
   announceOutcome,
 };
 

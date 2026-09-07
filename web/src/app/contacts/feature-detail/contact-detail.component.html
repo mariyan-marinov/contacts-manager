@@ -1,29 +1,52 @@
 <section class="detail">
-  <header class="detail__header">
-    <h2>{{ id() ? 'Edit contact' : 'New contact' }}</h2>
+  <header class="detail__head">
+    <p-button
+      icon="pi pi-arrow-left"
+      severity="secondary"
+      [text]="true"
+      [rounded]="true"
+      ariaLabel="Back to contacts"
+      pTooltip="Back to contacts"
+      tooltipPosition="bottom"
+      (onClick)="onCancelled()"
+    />
+
+    <div class="detail__titles">
+      <h2 class="page-title">{{ id() ? 'Edit contact' : 'New contact' }}</h2>
+      <p class="page-subtitle">
+        {{
+          id()
+            ? 'Update the details below and save your changes.'
+            : 'Fill in the details below to add someone to the address book.'
+        }}
+      </p>
+    </div>
   </header>
 
   @if (conflict()) {
-    <p-message severity="warn" styleClass="detail__banner">
-      <span>Someone else changed this contact while you were editing it.</span>
-      <p-button label="Reload it" severity="secondary" size="small" (onClick)="onReload()" />
+    <p-message severity="warn">
+      <div class="detail__banner">
+        <span class="detail__banner-text">
+          Someone else changed this contact while you were editing it.
+        </span>
+        <p-button label="Reload it" severity="secondary" size="small" (onClick)="onReload()" />
+      </div>
     </p-message>
   }
 
   @if (error()) {
-    <p-message severity="error" styleClass="detail__banner">{{ error() }}</p-message>
+    <p-message severity="error">{{ error() }}</p-message>
   }
 
   @if (loading()) {
-    <div class="detail__loading">
+    <div class="detail__loading surface-panel">
       <p-progress-spinner strokeWidth="4" ariaLabel="Loading contact" />
+      <p>Loading contact…</p>
     </div>
   } @else if (id() && !contact()) {
-    <p-message severity="error" styleClass="detail__banner">
-      That contact could not be loaded.
-    </p-message>
+    <p-message severity="error">That contact could not be loaded.</p-message>
   } @else {
-    <p-card>
+    <div class="detail__panel surface-panel">
       <app-contact-form
         [contact]="contact()"
         [saving]="saving()"
@@ -31,6 +54,6 @@
         (submitted)="onSubmitted($event)"
         (cancelled)="onCancelled()"
       />
-    </p-card>
+    </div>
   }
 </section>

@@ -1,44 +1,147 @@
 .contacts {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.25rem;
 
-  &__header {
+  &__head {
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     gap: 1rem;
-
-    h2 {
-      margin: 0;
-      font-size: 1.35rem;
-      font-weight: 600;
-    }
   }
 
-  &__error {
+  &__heading {
+    min-width: 0;
+  }
+
+  &__panel {
+    overflow: hidden;
+  }
+
+  &__toolbar {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.5rem;
+    padding: 0.875rem 1rem;
+    border-block-end: 1px solid var(--app-border);
+  }
+
+  /* Keeps a column title and its sort arrows on one line when the table is
+     scrolled down to its narrowest. */
+  &__column {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    white-space: nowrap;
+  }
+
+  &__actions {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.125rem;
+  }
+
+  &__name {
+    font-weight: 600;
+  }
+
+  &__numeric,
+  &__iban {
+    font-variant-numeric: tabular-nums;
   }
 
   &__iban {
-    font-variant-numeric: tabular-nums;
+    font-family: var(--app-font-mono);
+    font-size: 0.85em;
     letter-spacing: 0.02em;
+    color: var(--p-text-muted-color);
+  }
+
+  &__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 3rem 1rem;
+    text-align: center;
+    color: var(--p-text-muted-color);
+
+    i {
+      font-size: 1.75rem;
+      opacity: 0.55;
+    }
+
+    p {
+      margin: 0;
+      font-weight: 500;
+    }
+  }
+
+  &__empty-hint {
+    font-size: 0.85rem;
+    font-weight: 400 !important;
+    opacity: 0.8;
+  }
+}
+
+/* The search box keeps a comfortable reading width instead of stretching the
+   panel. PrimeNG owns the class on its own host element, so it is matched
+   rather than added to. */
+.contacts__toolbar .p-iconfield {
+  flex: 1 1 auto;
+  max-width: 22rem;
+}
+
+.contacts__toolbar .p-inputtext {
+  width: 100%;
+}
+
+/* PrimeNG owns the class on the table's own elements, so these hang off the
+   panel around it. */
+:host ::ng-deep .contacts__panel {
+  /* The table draws its own outer frame, which would sit on top of the panel's. */
+  .p-datatable-table-container {
+    border: 0;
+    overflow-x: auto;
+  }
+
+  /* Six columns of names, numbers and an IBAN need room. Narrower than this
+     the table scrolls sideways rather than wrapping every cell onto three
+     lines. */
+  .p-datatable-table {
+    min-width: 46rem;
+  }
+
+  tbody tr:last-child td {
+    border-block-end: 0;
   }
 }
 
 .contacts__actions-column {
   width: 1%;
   white-space: nowrap;
-  text-align: right;
+  text-align: end;
 }
 
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
+.banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+
+  &__text {
+    flex: 1 1 12rem;
+  }
+}
+
+@media (max-width: 45rem) {
+  .contacts__head {
+    align-items: stretch;
+  }
+
+  .contacts__toolbar .p-iconfield {
+    max-width: none;
+  }
 }
