@@ -23,6 +23,11 @@ internal static class ContactSort
     internal static readonly FrozenSet<string> AllowedDirections =
         new[] { Ascending, Descending }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// Every ordering carries a second key, so rows with the same city or the same birthday still
+    /// come back in a settled order — without one, two requests for the same page could disagree
+    /// about which rows belong on it.
+    /// </summary>
     internal static IOrderedQueryable<Contact> Apply(IQueryable<Contact> contacts, string field, bool descending) =>
         (field.ToLowerInvariant(), descending) switch
         {

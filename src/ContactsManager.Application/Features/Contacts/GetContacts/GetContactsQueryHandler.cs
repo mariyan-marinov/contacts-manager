@@ -11,6 +11,11 @@ namespace ContactsManager.Application.Features.Contacts.GetContacts;
 internal sealed class GetContactsQueryHandler(IContactReadContext read)
     : IRequestHandler<GetContactsQuery, PagedResult<ContactListItem>>
 {
+    /// <summary>
+    /// Two queries: the total counts everything the filter matches, then one page of rows is fetched.
+    /// Masking happens after the rows arrive because the mask is C# the database cannot run — which
+    /// is why the page is deliberately small and the count is not.
+    /// </summary>
     public async Task<PagedResult<ContactListItem>> Handle(
         GetContactsQuery query,
         CancellationToken cancellationToken)
@@ -49,6 +54,11 @@ internal sealed class GetContactsQueryHandler(IContactReadContext read)
         return new PagedResult<ContactListItem>(items, total, query.Page, query.Size);
     }
 
+    /// <summary>
+    /// One box searches first name, surname and city. Both sides are lower-cased so the match is
+    /// case-insensitive whatever the column collation says, and it stays a <c>LIKE</c> predicate so
+    /// the filtering happens in the database rather than over rows dragged into memory.
+    /// </summary>
     private static IQueryable<Contact> ApplySearch(IQueryable<Contact> contacts, string? search)
     {
         if (string.IsNullOrWhiteSpace(search))

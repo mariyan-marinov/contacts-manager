@@ -40,6 +40,10 @@ export const defaultContactQuery: ContactQuery = {
 /** What a lazy-load event from the table can speak about: paging and sorting, never the search. */
 export type ContactListView = Pick<ContactQuery, 'page' | 'size' | 'sort' | 'direction'>;
 
+/**
+ * Whether the table is describing the view the store already holds. The table re-announces its
+ * state more often than it changes, and this is what tells a genuine change from an echo.
+ */
 export function isSameListView(left: ContactListView, right: ContactListView): boolean {
   return (
     left.page === right.page &&
@@ -51,6 +55,7 @@ export function isSameListView(left: ContactListView, right: ContactListView): b
 
 const sortFields: readonly ContactSortField[] = ['surname', 'firstName', 'city', 'dateOfBirth'];
 
+/** Guards the two places a sort field arrives as a bare string: the URL and the table's events. */
 export function isSortField(value: string | null | undefined): value is ContactSortField {
   return value !== null && value !== undefined && sortFields.includes(value as ContactSortField);
 }

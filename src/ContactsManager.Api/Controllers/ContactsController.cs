@@ -10,11 +10,20 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ContactsManager.Api.Controllers;
 
+/// <summary>
+/// Dispatch and nothing else: each action hands a request to the <see cref="ISender"/> and turns the
+/// result into a status code. Failures are not caught here — they travel as exceptions to
+/// <c>ApiExceptionHandler</c>, which owns the mapping from failure to ProblemDetails.
+/// </summary>
 [ApiController]
 [Route("api/contacts")]
 [Produces("application/json")]
 public sealed class ContactsController(ISender sender) : ControllerBase
 {
+    /// <summary>
+    /// Paging, sorting and search are bound as one object, so their defaults and their limits live
+    /// with the query rather than being spelled out again in the signature.
+    /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<ContactListItem>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(HttpValidationProblemDetails), StatusCodes.Status400BadRequest)]
@@ -29,6 +38,10 @@ public sealed class ContactsController(ISender sender) : ControllerBase
     public Task<ContactDetail> GetContact(Guid id, CancellationToken cancellationToken) =>
         sender.Send(new GetContactByIdQuery(id), cancellationToken);
 
+    /// <summary>
+    /// 201 with a Location header pointing at the new contact, so a client learns the id it could not
+    /// have known. The body is empty: everything it would carry is already at that URL.
+    /// </summary>
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(HttpValidationProblemDetails), StatusCodes.Status400BadRequest)]

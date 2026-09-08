@@ -4,6 +4,10 @@ using ContactsManager.Application.Messaging;
 
 namespace ContactsManager.Application.Features.Contacts.GetContacts;
 
+/// <summary>
+/// Bound straight from the query string, so every property needs a usable default: a bare
+/// <c>GET /api/contacts</c> is the first page of twenty, by surname, ascending.
+/// </summary>
 public sealed record GetContactsQuery : IQuery<PagedResult<ContactListItem>>
 {
     public const int DefaultSize = 20;

@@ -25,6 +25,11 @@ public sealed record Address
     /// <summary>ISO 3166-1 alpha-2, upper-cased on the way in.</summary>
     public string Country { get; }
 
+    /// <summary>
+    /// The only way to get an <see cref="Address"/>: text is tidied first and then validated, so an
+    /// instance cannot exist in a state its own rules reject. A missing part arrives as null from a
+    /// JSON body and is treated the same as an empty one.
+    /// </summary>
     public static Address Create(string? street, string? houseNumber, string? postalCode, string? city, string? country)
     {
         var address = new Address(

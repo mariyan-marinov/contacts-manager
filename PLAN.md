@@ -190,7 +190,7 @@ Standalone components, lazy routes, and one unambiguous rule for where each piec
 
 ### Structure
 
-```
+```text
 web/src/app/
   app.config.ts        providers, PrimeNG theme
   app.routes.ts

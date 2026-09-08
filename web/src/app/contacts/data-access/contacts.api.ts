@@ -16,6 +16,7 @@ export class ContactsApi {
 
   private readonly http = inject(HttpClient);
 
+  /** An empty search is left out of the URL entirely: absent means unfiltered to the server. */
   list(query: ContactQuery): Observable<PagedResult<ContactListItem>> {
     let params = new HttpParams()
       .set('sort', query.sort)
@@ -39,6 +40,10 @@ export class ContactsApi {
     return this.http.post<void>(ContactsApi.endpoint, contact);
   }
 
+  /**
+   * The version travels in the body next to the values it was read with. If someone else has saved
+   * in the meantime the server answers 409, which is the only way this can fail on a valid form.
+   */
   update(id: string, contact: ContactInput, version: number): Observable<void> {
     return this.http.put<void>(`${ContactsApi.endpoint}/${id}`, { ...contact, version });
   }

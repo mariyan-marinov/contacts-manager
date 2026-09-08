@@ -3,6 +3,11 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace ContactsManager.Infrastructure.Persistence;
 
+/// <summary>
+/// Stamps the audit timestamps on the way to the database. An interceptor rather than a line in each
+/// handler, because the fields are shadow properties the domain cannot reach — and because this way
+/// nothing can be written without them, seeding and tests included.
+/// </summary>
 internal sealed class AuditingInterceptor(TimeProvider clock) : SaveChangesInterceptor
 {
     public override InterceptionResult<int> SavingChanges(
@@ -22,6 +27,10 @@ internal sealed class AuditingInterceptor(TimeProvider clock) : SaveChangesInter
         return base.SavingChangesAsync(eventData, result, cancellationToken);
     }
 
+    /// <summary>
+    /// Only entities that declare the audit fields are touched, so this stays correct if a type is
+    /// mapped later without them. Created is written once; updated on every save that changes a row.
+    /// </summary>
     private void Stamp(DbContext? context)
     {
         if (context is null)

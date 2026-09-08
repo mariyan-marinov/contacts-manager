@@ -10,6 +10,10 @@ namespace ContactsManager.Infrastructure.Persistence;
 /// </summary>
 public static class ContactSeeder
 {
+    /// <summary>
+    /// Does nothing once the table holds anything at all, so a restart — or a second test run
+    /// against a database that survived the first — does not stack up duplicates.
+    /// </summary>
     public static async Task SeedAsync(
         ContactsDbContext context,
         TimeProvider clock,

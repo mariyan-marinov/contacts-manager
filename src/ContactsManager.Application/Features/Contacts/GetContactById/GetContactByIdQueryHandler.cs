@@ -10,6 +10,10 @@ namespace ContactsManager.Application.Features.Contacts.GetContactById;
 internal sealed class GetContactByIdQueryHandler(IContactReadContext read)
     : IRequestHandler<GetContactByIdQuery, ContactDetail>
 {
+    /// <summary>
+    /// Projected in SQL rather than loaded and mapped: no aggregate is materialised, and the response
+    /// shape is visible right here next to the query that fills it.
+    /// </summary>
     public async Task<ContactDetail> Handle(GetContactByIdQuery query, CancellationToken cancellationToken)
     {
         var detail = await read.Contacts

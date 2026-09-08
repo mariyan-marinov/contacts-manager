@@ -18,6 +18,10 @@ export function parseContactQuery(params: ParamMap): Partial<ContactQuery> {
   };
 }
 
+/**
+ * The inverse of {@link parseContactQuery}. An empty search is omitted rather than written as a
+ * blank parameter, so the URL says what it means and reparsing gives back the same query.
+ */
 export function toQueryParams(query: ContactQuery): Record<string, string | number> {
   const params: Record<string, string | number> = {
     sort: query.sort,
@@ -33,6 +37,7 @@ export function toQueryParams(query: ContactQuery): Record<string, string | numb
   return params;
 }
 
+/** Page and size come out of a URL anyone can edit, so anything but a counting number is refused. */
 function positiveInteger(raw: string | null, fallback: number): number {
   const value = Number(raw);
   return Number.isInteger(value) && value > 0 ? value : fallback;

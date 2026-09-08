@@ -8,8 +8,13 @@ public sealed record Iban
 
     public string Value { get; }
 
+    /// <summary>What the list endpoint sends. See <see cref="IbanText.Mask"/> for the shape.</summary>
     public string Masked => IbanText.Mask(Value);
 
+    /// <summary>
+    /// Normalised before validating, so an IBAN typed in its conventional spaced groups is accepted
+    /// and stored in the single compact form the checksum is computed over.
+    /// </summary>
     public static Iban Create(string? value)
     {
         var iban = new Iban(IbanText.Normalise(value));

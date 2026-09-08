@@ -9,6 +9,11 @@ internal sealed class CreateContactCommandHandler(
     IUnitOfWork unitOfWork,
     TimeProvider clock) : IRequestHandler<CreateContactCommand, Guid>
 {
+    /// <summary>
+    /// The value object factories are what actually build the contact, so every rule is enforced a
+    /// second time on the way in — the validator only exists to report the failures politely. The id
+    /// is returned because the client cannot work it out: it is minted by the domain.
+    /// </summary>
     public async Task<Guid> Handle(CreateContactCommand command, CancellationToken cancellationToken)
     {
         var contact = Contact.Create(

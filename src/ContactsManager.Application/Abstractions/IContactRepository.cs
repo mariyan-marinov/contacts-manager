@@ -8,6 +8,10 @@ namespace ContactsManager.Application.Abstractions;
 /// </summary>
 public interface IContactRepository
 {
+    /// <summary>
+    /// Returns a tracked aggregate — unlike <see cref="IContactReadContext"/> — because callers load
+    /// a contact in order to change it.
+    /// </summary>
     Task<Contact?> GetByIdAsync(ContactId id, CancellationToken cancellationToken);
 
     void Add(Contact contact);

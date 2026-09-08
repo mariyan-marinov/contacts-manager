@@ -1,5 +1,9 @@
 namespace ContactsManager.Domain.Validation;
 
+/// <summary>
+/// The IBAN check digits. Kept apart from the validators because it is arithmetic with a
+/// specification behind it, and it is worth being able to test it as such.
+/// </summary>
 public static class Mod97
 {
     /// <summary>

@@ -13,6 +13,11 @@ internal sealed class ContactRepository(ContactsDbContext context) : IContactRep
 
     public void Remove(Contact contact) => context.Contacts.Remove(contact);
 
+    /// <summary>
+    /// Writing the original value, not the current one: EF builds the UPDATE's WHERE clause from what
+    /// it believes the row looked like when it was read, so putting the client's version there is
+    /// what turns a stale save into zero rows affected — and from there into a 409.
+    /// </summary>
     public void SetExpectedVersion(Contact contact, uint version) =>
         context.Entry(contact).Property(tracked => tracked.Version).OriginalValue = version;
 }

@@ -9,6 +9,10 @@ internal sealed class DeleteContactCommandHandler(
     IContactRepository contacts,
     IUnitOfWork unitOfWork) : IRequestHandler<DeleteContactCommand, Unit>
 {
+    /// <summary>
+    /// The contact is loaded first so deleting something that is already gone answers 404 instead of
+    /// succeeding against nothing.
+    /// </summary>
     public async Task<Unit> Handle(DeleteContactCommand command, CancellationToken cancellationToken)
     {
         var contact = await contacts.GetByIdAsync(new ContactId(command.Id), cancellationToken)

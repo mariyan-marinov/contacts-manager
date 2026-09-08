@@ -2,6 +2,11 @@ using ContactsManager.Domain.Validation;
 
 namespace ContactsManager.Domain.Contacts;
 
+/// <summary>
+/// The aggregate root. Every field is a value object that validated itself on the way in, so the
+/// mutators below only need to refuse null — and each is named for the thing that happened rather
+/// than the field it writes, so a change of address cannot be confused with a correction to one.
+/// </summary>
 public sealed class Contact
 {
     /// <summary>
@@ -97,5 +102,9 @@ public sealed class Contact
         DateOfBirth = dateOfBirth;
     }
 
+    /// <summary>
+    /// Derived, never stored. Today comes from the caller so the aggregate needs no clock of its own
+    /// and the answer is the same every time it is asked with the same date.
+    /// </summary>
     public int AgeOn(DateOnly today) => DateOfBirth.AgeOn(today);
 }

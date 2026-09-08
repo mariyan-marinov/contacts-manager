@@ -4,6 +4,10 @@ using FluentValidation.Results;
 
 namespace ContactsManager.Application.Behaviours;
 
+/// <summary>
+/// Runs every validator registered for the request before the handler sees it, so a handler can take
+/// its input as given and the domain's own invariant checks stay a safety net rather than a gate.
+/// </summary>
 internal sealed class ValidationBehaviour<TRequest, TResponse>(IEnumerable<IValidator<TRequest>> validators)
     : IPipelineBehaviour<TRequest, TResponse>
     where TRequest : IRequest<TResponse>

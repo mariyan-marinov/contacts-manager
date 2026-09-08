@@ -22,7 +22,7 @@ sitting.
 
 All three at once — Postgres, the API and the dev server — in one terminal:
 
-```
+```bash
 ./scripts/run.ps1             # Windows
 ./scripts/run.sh              # Linux, macOS, Git Bash
 ```
@@ -41,7 +41,7 @@ your browser, and stops both processes on Ctrl+C. The container is left running 
 
 Or by hand, three steps:
 
-```
+```bash
 cp .env.example .env          # development credentials for Postgres
 docker compose up -d db       # start PostgreSQL
 
@@ -64,7 +64,7 @@ rather than per schema: `400` shows a field-keyed validation payload, `404` and 
 
 In a second terminal:
 
-```
+```bash
 cd web
 npm ci
 npm start
@@ -75,7 +75,7 @@ only ever calls relative URLs.
 
 ## Running the tests
 
-```
+```bash
 # Domain and application unit tests, plus API contract tests.
 # The contract tests need Postgres running; the unit tests do not.
 dotnet test
@@ -101,7 +101,7 @@ contacts.
 
 ## Working on the database
 
-```
+```bash
 # Add a migration after changing the model
 dotnet ef migrations add <Name> \
   -p src/ContactsManager.Infrastructure \
@@ -131,7 +131,7 @@ including the costs it accepts and the questions a reviewer is most likely to as
 [PROMPTS.md](PROMPTS.md) is the build order those decisions were implemented in, each step ending in
 a gate that had to pass before the next one started. The short version:
 
-```
+```text
 src/
   ContactsManager.Domain           value objects, the Contact aggregate, every field rule
   ContactsManager.Application      CQRS dispatcher, pipeline behaviours, five feature slices

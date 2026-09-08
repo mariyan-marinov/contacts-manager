@@ -10,6 +10,12 @@ internal sealed class UpdateContactCommandHandler(
     IUnitOfWork unitOfWork,
     TimeProvider clock) : IRequestHandler<UpdateContactCommand, Unit>
 {
+    /// <summary>
+    /// Load, then mutate: the contact is fetched so EF writes only the columns that changed and so a
+    /// missing one is a 404 rather than an update that quietly matches no rows. The expected version
+    /// is set before the mutations, so the UPDATE that follows carries the client's version in its
+    /// WHERE clause and a stale save fails in the database.
+    /// </summary>
     public async Task<Unit> Handle(UpdateContactCommand command, CancellationToken cancellationToken)
     {
         var id = new ContactId(command.Id);
