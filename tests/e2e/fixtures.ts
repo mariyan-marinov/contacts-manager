@@ -1,10 +1,12 @@
 import { test as base, expect } from '@playwright/test';
 import { ContactFormPage } from './pages/contact-form.page';
+import { ContactViewPage } from './pages/contact-view.page';
 import { ContactsListPage } from './pages/contacts-list.page';
 
 interface Fixtures {
   readonly contactsList: ContactsListPage;
   readonly contactForm: ContactFormPage;
+  readonly contactView: ContactViewPage;
 }
 
 export const test = base.extend<Fixtures & { seededDatabase: void }>({
@@ -27,6 +29,10 @@ export const test = base.extend<Fixtures & { seededDatabase: void }>({
 
   contactForm: async ({ page }, use) => {
     await use(new ContactFormPage(page));
+  },
+
+  contactView: async ({ page }, use) => {
+    await use(new ContactViewPage(page));
   },
 });
 

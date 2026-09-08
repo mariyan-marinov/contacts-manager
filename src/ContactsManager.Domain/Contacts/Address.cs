@@ -25,6 +25,9 @@ public sealed record Address
     /// <summary>ISO 3166-1 alpha-2, upper-cased on the way in.</summary>
     public string Country { get; }
 
+    /// <summary>Stateless and thread-safe, so one instance serves every construction.</summary>
+    private static readonly AddressValidator Validator = new();
+
     /// <summary>
     /// The only way to get an <see cref="Address"/>: text is tidied first and then validated, so an
     /// instance cannot exist in a state its own rules reject. A missing part arrives as null from a
@@ -39,7 +42,7 @@ public sealed record Address
             (city ?? string.Empty).Trim(),
             (country ?? string.Empty).Trim().ToUpperInvariant());
 
-        DomainValidationException.ThrowIfInvalid(new AddressValidator().Validate(address));
+        DomainValidationException.ThrowIfInvalid(Validator.Validate(address));
         return address;
     }
 

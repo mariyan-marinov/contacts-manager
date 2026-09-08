@@ -5,42 +5,51 @@
     </div>
 
     <div class="contact-form__grid">
-      <label class="field field--span-6">
-        <span class="field__label"
-          >First name <span aria-hidden="true" class="field__required">*</span></span
-        >
+      <app-form-field
+        #firstName
+        name="firstName"
+        label="First name"
+        [required]="true"
+        [span]="6"
+        [messages]="messages()['firstName']"
+      >
         <input
           pInputText
+          id="firstNameInput"
           formControlName="firstName"
           autocomplete="given-name"
-          (input)="onFieldInput('firstName')"
+          [attr.aria-describedby]="firstName.describedBy()"
         />
-        @for (message of messagesFor('firstName'); track message) {
-          <p-message severity="error" variant="simple" size="small">{{ message }}</p-message>
-        }
-      </label>
+      </app-form-field>
 
-      <label class="field field--span-6">
-        <span class="field__label"
-          >Surname <span aria-hidden="true" class="field__required">*</span></span
-        >
+      <app-form-field
+        #surname
+        name="surname"
+        label="Surname"
+        [required]="true"
+        [span]="6"
+        [messages]="messages()['surname']"
+      >
         <input
           pInputText
+          id="surnameInput"
           formControlName="surname"
           autocomplete="family-name"
-          (input)="onFieldInput('surname')"
+          [attr.aria-describedby]="surname.describedBy()"
         />
-        @for (message of messagesFor('surname'); track message) {
-          <p-message severity="error" variant="simple" size="small">{{ message }}</p-message>
-        }
-      </label>
+      </app-form-field>
 
-      <div class="field field--span-6">
-        <label class="field__label" for="dateOfBirth">
-          Date of birth <span aria-hidden="true" class="field__required">*</span>
-        </label>
+      <app-form-field
+        #dateOfBirth
+        name="dateOfBirth"
+        label="Date of birth"
+        hint="Format: 2001-04-30"
+        [required]="true"
+        [span]="6"
+        [messages]="messages()['dateOfBirth']"
+      >
         <p-datepicker
-          inputId="dateOfBirth"
+          inputId="dateOfBirthInput"
           formControlName="dateOfBirth"
           dateFormat="yy-mm-dd"
           [maxDate]="today"
@@ -48,44 +57,44 @@
           [showIcon]="true"
           appendTo="body"
         />
-        <small class="field__hint">Format: 2001-04-30</small>
-        @for (message of messagesFor('dateOfBirth'); track message) {
-          <p-message severity="error" variant="simple" size="small">{{ message }}</p-message>
-        }
-      </div>
+      </app-form-field>
 
-      <label class="field field--span-6">
-        <span class="field__label"
-          >Phone number <span aria-hidden="true" class="field__required">*</span></span
-        >
+      <app-form-field
+        #phoneNumber
+        name="phoneNumber"
+        label="Phone number"
+        [required]="true"
+        [span]="6"
+        [messages]="messages()['phoneNumber']"
+      >
         <input
           pInputText
+          id="phoneNumberInput"
           formControlName="phoneNumber"
           inputmode="tel"
           autocomplete="tel"
-          (input)="onFieldInput('phoneNumber')"
+          [attr.aria-describedby]="phoneNumber.describedBy()"
         />
-        @for (message of messagesFor('phoneNumber'); track message) {
-          <p-message severity="error" variant="simple" size="small">{{ message }}</p-message>
-        }
-      </label>
+      </app-form-field>
 
-      <label class="field field--span-12">
-        <span class="field__label"
-          >IBAN <span aria-hidden="true" class="field__required">*</span></span
-        >
+      <app-form-field
+        #iban
+        name="iban"
+        label="IBAN"
+        [required]="true"
+        [span]="12"
+        [messages]="messages()['iban']"
+      >
         <input
           pInputText
+          id="ibanInput"
           formControlName="iban"
           spellcheck="false"
           autocapitalize="characters"
           class="contact-form__iban"
-          (input)="onFieldInput('iban')"
+          [attr.aria-describedby]="iban.describedBy()"
         />
-        @for (message of messagesFor('iban'); track message) {
-          <p-message severity="error" variant="simple" size="small">{{ message }}</p-message>
-        }
-      </label>
+      </app-form-field>
     </div>
   </section>
 
@@ -95,69 +104,81 @@
     </div>
 
     <div class="contact-form__grid">
-      <label class="field field--span-9">
-        <span class="field__label"
-          >Street <span aria-hidden="true" class="field__required">*</span></span
-        >
+      <app-form-field
+        #street
+        name="street"
+        label="Street"
+        [required]="true"
+        [span]="9"
+        [messages]="messages()['address.street']"
+      >
         <input
           pInputText
+          id="streetInput"
           formControlName="street"
           autocomplete="address-line1"
-          (input)="onFieldInput('address.street')"
+          [attr.aria-describedby]="street.describedBy()"
         />
-        @for (message of messagesFor('address.street'); track message) {
-          <p-message severity="error" variant="simple" size="small">{{ message }}</p-message>
-        }
-      </label>
+      </app-form-field>
 
-      <label class="field field--span-3">
-        <span class="field__label">House number</span>
+      <app-form-field
+        #houseNumber
+        name="houseNumber"
+        label="House number"
+        [span]="3"
+        [messages]="messages()['address.houseNumber']"
+      >
         <input
           pInputText
+          id="houseNumberInput"
           formControlName="houseNumber"
-          (input)="onFieldInput('address.houseNumber')"
+          [attr.aria-describedby]="houseNumber.describedBy()"
         />
-        @for (message of messagesFor('address.houseNumber'); track message) {
-          <p-message severity="error" variant="simple" size="small">{{ message }}</p-message>
-        }
-      </label>
+      </app-form-field>
 
-      <label class="field field--span-3">
-        <span class="field__label"
-          >Postal code <span aria-hidden="true" class="field__required">*</span></span
-        >
+      <app-form-field
+        #postalCode
+        name="postalCode"
+        label="Postal code"
+        [required]="true"
+        [span]="3"
+        [messages]="messages()['address.postalCode']"
+      >
         <input
           pInputText
+          id="postalCodeInput"
           formControlName="postalCode"
           autocomplete="postal-code"
-          (input)="onFieldInput('address.postalCode')"
+          [attr.aria-describedby]="postalCode.describedBy()"
         />
-        @for (message of messagesFor('address.postalCode'); track message) {
-          <p-message severity="error" variant="simple" size="small">{{ message }}</p-message>
-        }
-      </label>
+      </app-form-field>
 
-      <label class="field field--span-5">
-        <span class="field__label"
-          >City <span aria-hidden="true" class="field__required">*</span></span
-        >
+      <app-form-field
+        #city
+        name="city"
+        label="City"
+        [required]="true"
+        [span]="5"
+        [messages]="messages()['address.city']"
+      >
         <input
           pInputText
+          id="cityInput"
           formControlName="city"
           autocomplete="address-level2"
-          (input)="onFieldInput('address.city')"
+          [attr.aria-describedby]="city.describedBy()"
         />
-        @for (message of messagesFor('address.city'); track message) {
-          <p-message severity="error" variant="simple" size="small">{{ message }}</p-message>
-        }
-      </label>
+      </app-form-field>
 
-      <div class="field field--span-4">
-        <label class="field__label" for="country">
-          Country <span aria-hidden="true" class="field__required">*</span>
-        </label>
+      <app-form-field
+        name="country"
+        label="Country"
+        [required]="true"
+        [span]="4"
+        [messages]="messages()['address.country']"
+      >
         <p-select
-          inputId="country"
+          inputId="countryInput"
           formControlName="country"
           [options]="countries"
           optionLabel="name"
@@ -167,12 +188,17 @@
           filterBy="name"
           appendTo="body"
         />
-        @for (message of messagesFor('address.country'); track message) {
-          <p-message severity="error" variant="simple" size="small">{{ message }}</p-message>
-        }
-      </div>
+      </app-form-field>
     </div>
   </section>
+
+  @if (formMessages().length > 0) {
+    <div class="contact-form__form-errors" role="alert">
+      @for (message of formMessages(); track message) {
+        <p-message severity="error">{{ message }}</p-message>
+      }
+    </div>
+  }
 
   <footer class="contact-form__actions">
     <span class="contact-form__required-note" aria-hidden="true">* Required</span>

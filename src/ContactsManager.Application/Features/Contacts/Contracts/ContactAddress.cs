@@ -1,6 +1,6 @@
 namespace ContactsManager.Application.Features.Contacts.Contracts;
 
-public sealed record AddressRequest(
+public sealed record ContactAddress(
     string Street,
     string? HouseNumber,
     string PostalCode,

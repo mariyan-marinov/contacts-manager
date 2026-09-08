@@ -21,7 +21,7 @@ internal sealed class CreateContactCommandValidator : AbstractValidator<CreateCo
 
         RuleFor(command => command.Address)
             .NotNull()
-            .SetValidator(new AddressRequestValidator());
+            .SetValidator(new ContactAddressValidator());
 
         RuleFor(command => Text.Trimmed(command.PhoneNumber))
             .PhoneNumber()

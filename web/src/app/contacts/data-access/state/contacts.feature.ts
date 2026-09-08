@@ -11,16 +11,23 @@ import { contactFormActions, contactsApiActions, contactsPageActions } from './c
 /**
  * The entity map holds list items only. The detail shape carries a full IBAN and a version, so it
  * lives in its own slice rather than sharing ids with a different shape.
+ *
+ * The two error fields are deliberately separate. One string serving both pages meant a failed
+ * delete could still be on screen when the form opened, and a failed load could be reported twice
+ * at once — an error belongs to the page that caused it.
  */
 export interface ContactsState extends EntityState<ContactListItem> {
   readonly query: ContactQuery;
   readonly total: number;
   readonly loading: boolean;
-  readonly error: string | null;
+  /** Something went wrong on the list: a failed load, or a delete that was refused. */
+  readonly listError: string | null;
   /** The contact being edited, null while creating. Set before the detail arrives. */
   readonly editingId: string | null;
   readonly selected: ContactDetail | null;
   readonly selectedLoading: boolean;
+  /** Something went wrong on the form, other than the field errors below. */
+  readonly formError: string | null;
   readonly saving: boolean;
   /** Set once a save lands, so leaving the page does not ask about work already committed. */
   readonly saved: boolean;
@@ -36,10 +43,11 @@ const initialState: ContactsState = contactsAdapter.getInitialState({
   query: defaultContactQuery,
   total: 0,
   loading: false,
-  error: null,
+  listError: null,
   editingId: null,
   selected: null,
   selectedLoading: false,
+  formError: null,
   saving: false,
   saved: false,
   fieldErrors: null,
@@ -55,20 +63,23 @@ export const contactsFeature = createFeature({
       ...state,
       query: { ...state.query, ...query },
       loading: true,
-      error: null,
+      listError: null,
     })),
-    on(contactsPageActions.refreshed, (state) => ({ ...state, loading: true, error: null })),
+    on(contactsPageActions.refreshed, (state) => ({ ...state, loading: true, listError: null })),
+    // The search box is ahead of the request by the length of the debounce, so the table says it is
+    // working from the first keystroke rather than sitting still for a third of a second.
+    on(contactsPageActions.searchChanged, (state) => ({ ...state, loading: true })),
     on(contactsApiActions.loaded, (state, { result }) => ({
       // setAll, not upsert: each page replaces the previous one rather than accumulating.
       ...contactsAdapter.setAll([...result.items], state),
       total: result.total,
       loading: false,
-      error: null,
+      listError: null,
     })),
     on(contactsApiActions.loadFailed, (state, { message }) => ({
       ...state,
       loading: false,
-      error: message,
+      listError: message,
     })),
 
     on(contactFormActions.opened, (state, { id }) => ({
@@ -80,22 +91,25 @@ export const contactsFeature = createFeature({
       saved: false,
       fieldErrors: null,
       conflict: false,
-      error: null,
+      formError: null,
     })),
     on(contactFormActions.reloadRequested, (state) => ({
       ...state,
       selectedLoading: true,
       conflict: false,
+      formError: null,
     })),
     on(contactsApiActions.contactLoaded, (state, { contact }) => ({
       ...state,
       selected: contact,
       selectedLoading: false,
+      formError: null,
     })),
-    on(contactsApiActions.contactLoadFailed, (state, { message }) => ({
+    // The page says the contact could not be loaded on its own, so the message is not repeated
+    // as a banner above it.
+    on(contactsApiActions.contactLoadFailed, (state) => ({
       ...state,
       selectedLoading: false,
-      error: message,
     })),
 
     on(contactFormActions.submitted, (state) => ({
@@ -104,22 +118,28 @@ export const contactsFeature = createFeature({
       saved: false,
       fieldErrors: null,
       conflict: false,
+      formError: null,
     })),
     on(contactsApiActions.created, contactsApiActions.updated, (state) => ({
       ...state,
       saving: false,
       saved: true,
       fieldErrors: null,
+      formError: null,
     })),
     on(contactsApiActions.saveFailed, (state, { error }) => ({
       ...state,
       saving: false,
       fieldErrors: error.fieldErrors,
       conflict: error.status === 409,
-      error: error.status === 400 ? null : error.message,
+      // A 400 is already spelled out field by field, and a 409 has a banner of its own.
+      formError: error.status === 400 || error.status === 409 ? null : error.message,
     })),
 
-    on(contactsApiActions.deleteFailed, (state, { message }) => ({ ...state, error: message })),
+    on(contactsApiActions.deleteFailed, (state, { message }) => ({
+      ...state,
+      listError: message,
+    })),
   ),
 
   extraSelectors: ({ selectContactsState, selectQuery, selectTotal }) => ({
@@ -129,10 +149,20 @@ export const contactsFeature = createFeature({
     ),
     /** p-table counts rows from zero; the query counts pages from one. */
     selectFirstRow: createSelector(selectQuery, (query) => (query.page - 1) * query.size),
-    selectIsEmpty: createSelector(
+    /**
+     * Why the list is empty, which decides what to offer: a search that matched nothing wants a way
+     * to clear it, and an address book with nothing in it wants a way to add the first contact.
+     */
+    selectEmptyReason: createSelector(
       selectTotal,
       selectQuery,
-      (total, query) => total === 0 && query.search !== null,
+      (total, query): 'no-matches' | 'no-contacts' | null => {
+        if (total > 0) {
+          return null;
+        }
+
+        return query.search !== null && query.search !== '' ? 'no-matches' : 'no-contacts';
+      },
     ),
   }),
 });

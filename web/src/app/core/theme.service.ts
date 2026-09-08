@@ -20,8 +20,6 @@ export class ThemeService {
   /** Tracks the OS setting so 'system' stays live rather than being sampled once at startup. */
   private readonly systemPrefersDark = signal(false);
 
-  readonly current = this.preference.asReadonly();
-
   readonly isDark = computed(() =>
     this.preference() === 'system' ? this.systemPrefersDark() : this.preference() === 'dark',
   );

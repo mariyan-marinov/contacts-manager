@@ -14,7 +14,10 @@ public static class IbanText
 
     /// <summary>
     /// First four characters, four asterisks, last four — `NL91****4300`. The asterisk run is fixed
-    /// so the mask does not disclose how long the IBAN is.
+    /// so the mask does not disclose how long the IBAN is. Anything too short to split that way is
+    /// masked whole: a validated IBAN is never that short, and disclosing one that slipped through
+    /// would be the worse failure.
     /// </summary>
-    public static string Mask(string value) => $"{value[..4]}****{value[^4..]}";
+    public static string Mask(string? value) =>
+        value is null || value.Length < 8 ? "****" : $"{value[..4]}****{value[^4..]}";
 }

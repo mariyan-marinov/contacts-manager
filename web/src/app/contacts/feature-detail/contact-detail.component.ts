@@ -42,7 +42,7 @@ export class ContactDetailComponent implements OnInit {
   private readonly saved = this.store.selectSignal(contactsFeature.selectSaved);
   protected readonly fieldErrors = this.store.selectSignal(contactsFeature.selectFieldErrors);
   protected readonly conflict = this.store.selectSignal(contactsFeature.selectConflict);
-  protected readonly error = this.store.selectSignal(contactsFeature.selectError);
+  protected readonly error = this.store.selectSignal(contactsFeature.selectFormError);
 
   /** Not the constructor: a route-bound input is not set until after construction. */
   ngOnInit(): void {

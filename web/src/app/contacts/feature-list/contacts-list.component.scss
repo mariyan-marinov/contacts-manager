@@ -47,6 +47,21 @@
     font-weight: 600;
   }
 
+  /* The row is the target for a pointer, so it says so. Keyboard users reach the
+     same place through the link in the first cell. */
+  &__row {
+    cursor: pointer;
+  }
+
+  &__link {
+    color: inherit;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
   &__numeric,
   &__iban {
     font-variant-numeric: tabular-nums;
@@ -84,6 +99,11 @@
     font-weight: 400 !important;
     opacity: 0.8;
   }
+
+  /* The empty state offers a way out of itself, set apart from the explanation. */
+  &__empty p-button {
+    margin-block-start: 0.75rem;
+  }
 }
 
 /* The search box keeps a comfortable reading width instead of stretching the
@@ -107,11 +127,11 @@
     overflow-x: auto;
   }
 
-  /* Six columns of names, numbers and an IBAN need room. Narrower than this
-     the table scrolls sideways rather than wrapping every cell onto three
+  /* Seven columns of names, dates, numbers and an IBAN need room. Narrower than
+     this the table scrolls sideways rather than wrapping every cell onto three
      lines. */
   .p-datatable-table {
-    min-width: 46rem;
+    min-width: 54rem;
   }
 
   tbody tr:last-child td {

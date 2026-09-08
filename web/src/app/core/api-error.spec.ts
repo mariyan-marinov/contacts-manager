@@ -10,7 +10,9 @@ describe('toApiError', () => {
   it.each([0, 502, 503, 504])('says the server is unreachable for status %i', (status) => {
     const error = toApiError(response(status));
 
-    expect(error.message).toBe('Cannot reach the server. Check that the API is running and try again.');
+    expect(error.message).toBe(
+      'Cannot reach the server. Check that the API is running and try again.',
+    );
     expect(error.fieldErrors).toBeNull();
   });
 

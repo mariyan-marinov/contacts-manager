@@ -42,11 +42,16 @@ test("searching, sorting and paging each ask the server for the new view", async
   await contactsList.goToNextPage();
   await paged;
 
+  // The request having been sent is not the page having arrived. Waiting for the paginator to say
+  // which rows it is showing is what makes the comparison below about the second page.
+  await expect(contactsList.pageReport()).toHaveText("6–10 of 12");
+
   // The address bar follows the store, so this view survives a reload.
   await expect(page).toHaveURL(/page=2/);
   const beforeReload = await contactsList.surnames();
   await page.reload();
   await contactsList.waitForRows();
+  await expect(contactsList.pageReport()).toHaveText("6–10 of 12");
 
   expect(await contactsList.surnames()).toEqual(beforeReload);
 });
@@ -104,4 +109,18 @@ test("one page of the list costs exactly one request", async ({
   await contactsList.goToNextPage();
   await page.waitForTimeout(1500);
   expect(listCalls).toHaveLength(2);
+});
+
+test("tells a search that matched nothing apart from an empty address book", async ({
+  contactsList,
+}) => {
+  await contactsList.goto();
+
+  await contactsList.search("qqqqqq");
+
+  // The offer has to match the reason: this is a search to clear, not a first contact to add.
+  await expect(contactsList.emptyState()).toContainText("No contacts match");
+  await expect(
+    contactsList.emptyState().getByRole("button", { name: "Clear search" }),
+  ).toBeVisible();
 });

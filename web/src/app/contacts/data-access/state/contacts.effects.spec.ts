@@ -149,19 +149,76 @@ describe('saveContact', () => {
 
   it('updates with the version the form was loaded with', async () => {
     let sentVersion = 0;
+    let sentId = '';
     const store = configure({
-      update: (_id, _contact, version) => {
+      update: (id, _contact, version) => {
+        sentId = id;
         sentVersion = version;
         return of(undefined);
       },
     });
+    // The route is what says this is an edit, so the page reports it before the detail arrives.
+    store.dispatch(contactFormActions.opened({ id: detail.id }));
     store.dispatch(contactsApiActions.contactLoaded({ contact: detail }));
 
     const dispatched = firstValueFrom(run(contactsEffects.saveContact));
     store.dispatch(contactFormActions.submitted({ contact: input }));
 
     expect(await dispatched).toEqual(contactsApiActions.updated());
+    expect(sentId).toBe(detail.id);
     expect(sentVersion).toBe(7);
+  });
+
+  /**
+   * The route said which contact is being edited, so a detail that never arrived must not turn the
+   * save into a second copy of it. Keying this off `selected` instead would do exactly that.
+   */
+  it('updates rather than creates when the contact being edited failed to load', async () => {
+    let created = false;
+    let updated = false;
+    const store = configure({
+      create: () => {
+        created = true;
+        return of(undefined);
+      },
+      update: () => {
+        updated = true;
+        return of(undefined);
+      },
+    });
+    store.dispatch(contactFormActions.opened({ id: detail.id }));
+    store.dispatch(contactsApiActions.contactLoadFailed({ message: 'Cannot reach the server.' }));
+
+    const dispatched = firstValueFrom(run(contactsEffects.saveContact));
+    store.dispatch(contactFormActions.submitted({ contact: input }));
+
+    await dispatched;
+
+    expect(created).toBe(false);
+    expect(updated).toBe(true);
+  });
+
+  /** A second click while a save is in flight is ignored, not raced against the first. */
+  it('ignores a second submit while the first is still going', async () => {
+    let calls = 0;
+    const store = configure({
+      create: () => {
+        calls += 1;
+        return new Observable<void>(() => {
+          // Never settles, so the first save is still in flight when the second arrives.
+        });
+      },
+    });
+
+    const effect = run(contactsEffects.saveContact) as Observable<unknown>;
+    const subscription = effect.subscribe();
+
+    store.dispatch(contactFormActions.submitted({ contact: input }));
+    store.dispatch(contactFormActions.submitted({ contact: input }));
+
+    subscription.unsubscribe();
+
+    expect(calls).toBe(1);
   });
 
   it('keeps a 400 as field errors rather than a page-level message', async () => {

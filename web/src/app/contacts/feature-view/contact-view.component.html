@@ -1,0 +1,70 @@
+<section class="view">
+  <header class="view__head">
+    <p-button
+      icon="pi pi-arrow-left"
+      severity="secondary"
+      [text]="true"
+      [rounded]="true"
+      ariaLabel="Back to contacts"
+      pTooltip="Back to contacts"
+      tooltipPosition="bottom"
+      (onClick)="onBack()"
+    />
+
+    <div class="view__titles">
+      <h2 class="page-title">{{ loading() ? 'Contact' : fullName() }}</h2>
+      <p class="page-subtitle">Contact details.</p>
+    </div>
+
+    @if (contact()) {
+      <p-button label="Edit" icon="pi pi-pencil" (onClick)="onEdit()" />
+    }
+  </header>
+
+  @if (loading()) {
+    <div class="view__loading surface-panel">
+      <p-progress-spinner strokeWidth="4" ariaLabel="Loading contact" />
+      <p>Loading contact…</p>
+    </div>
+  } @else if (contact(); as contact) {
+    <div class="view__panel surface-panel">
+      <dl class="view__fields">
+        <div class="view__field">
+          <dt>First name</dt>
+          <dd>{{ contact.firstName }}</dd>
+        </div>
+
+        <div class="view__field">
+          <dt>Surname</dt>
+          <dd>{{ contact.surname }}</dd>
+        </div>
+
+        <div class="view__field">
+          <dt>Date of birth</dt>
+          <dd>{{ contact.dateOfBirth }}</dd>
+        </div>
+
+        <div class="view__field">
+          <dt>Phone number</dt>
+          <dd class="view__numeric">{{ contact.phoneNumber }}</dd>
+        </div>
+
+        <div class="view__field view__field--wide">
+          <dt>Address</dt>
+          <dd>
+            @for (line of addressLines(); track line) {
+              <span class="view__address-line">{{ line }}</span>
+            }
+          </dd>
+        </div>
+
+        <div class="view__field view__field--wide">
+          <dt>IBAN</dt>
+          <dd class="view__iban">{{ contact.iban }}</dd>
+        </div>
+      </dl>
+    </div>
+  } @else {
+    <p-message severity="error">That contact could not be loaded.</p-message>
+  }
+</section>

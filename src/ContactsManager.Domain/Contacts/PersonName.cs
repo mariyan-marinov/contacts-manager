@@ -4,6 +4,9 @@ namespace ContactsManager.Domain.Contacts;
 
 public sealed record PersonName
 {
+    /// <summary>Stateless and thread-safe, so one instance serves every construction.</summary>
+    private static readonly PersonNameValidator Validator = new();
+
     private PersonName(string first, string surname)
     {
         First = first;
@@ -17,7 +20,7 @@ public sealed record PersonName
     public static PersonName Create(string? first, string? surname)
     {
         var name = new PersonName((first ?? string.Empty).Trim(), (surname ?? string.Empty).Trim());
-        DomainValidationException.ThrowIfInvalid(new PersonNameValidator().Validate(name));
+        DomainValidationException.ThrowIfInvalid(Validator.Validate(name));
         return name;
     }
 

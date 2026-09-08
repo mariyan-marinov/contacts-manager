@@ -2,7 +2,9 @@
   <header class="contacts__head">
     <div class="contacts__heading">
       <h2 class="page-title">Contacts</h2>
-      <p class="page-subtitle">
+      <!-- Announced, because the count is the answer to the search and a reader who cannot see the
+           table changing has no other way to learn it. -->
+      <p class="page-subtitle" role="status" aria-live="polite">
         @if (loading() && total() === 0) {
           Loading…
         } @else if (searchTerm() !== '') {
@@ -17,7 +19,7 @@
   </header>
 
   @if (error()) {
-    <p-message severity="error" styleClass="contacts__error">
+    <p-message severity="error">
       <div class="banner">
         <span class="banner__text">{{ error() }}</span>
         <p-button label="Try again" severity="secondary" size="small" (onClick)="onRetry()" />
@@ -77,6 +79,9 @@
           <th pSortableColumn="firstName">
             <span class="contacts__column">First name <p-sort-icon field="firstName" /></span>
           </th>
+          <th pSortableColumn="dateOfBirth">
+            <span class="contacts__column">Date of birth <p-sort-icon field="dateOfBirth" /></span>
+          </th>
           <th pSortableColumn="city">
             <span class="contacts__column">City <p-sort-icon field="city" /></span>
           </th>
@@ -86,10 +91,20 @@
         </tr>
       </ng-template>
 
-      <ng-template #body let-contact>
-        <tr>
-          <td class="contacts__name">{{ contact.surname }}</td>
+      <ng-template #body let-row>
+        @let contact = asContact(row);
+
+        <!-- The row is a convenience for a pointer; the link in the first cell is the accessible
+             path, which is why the row itself is deliberately not a tab stop. Making it one would
+             add a redundant stop in front of the link and the two buttons in every single row. -->
+        <tr class="contacts__row" (click)="onOpen(contact, $event)">
+          <td class="contacts__name">
+            <a class="contacts__link" [routerLink]="['/contacts', contact.id]">
+              {{ contact.surname }}
+            </a>
+          </td>
           <td>{{ contact.firstName }}</td>
+          <td class="contacts__numeric">{{ contact.dateOfBirth }}</td>
           <td>{{ contact.city }}, {{ contact.country }}</td>
           <td class="contacts__numeric">{{ contact.phoneNumber }}</td>
           <td class="contacts__iban">{{ contact.ibanMasked }}</td>
@@ -122,15 +137,28 @@
 
       <ng-template #emptymessage>
         <tr>
-          <td colspan="6">
+          <td colspan="7">
             <div class="contacts__empty">
               @if (loading()) {
                 <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
                 <p>Loading contacts…</p>
-              } @else {
-                <i class="pi pi-inbox" aria-hidden="true"></i>
-                <p>No contacts match this search.</p>
+              } @else if (emptyReason() === 'no-matches') {
+                <i class="pi pi-search" aria-hidden="true"></i>
+                <p>No contacts match “{{ searchTerm() }}”.</p>
                 <p class="contacts__empty-hint">Try a different name or city.</p>
+                <p-button
+                  label="Clear search"
+                  icon="pi pi-times"
+                  severity="secondary"
+                  size="small"
+                  [outlined]="true"
+                  (onClick)="onSearch(''); searchBox.value = ''"
+                />
+              } @else {
+                <i class="pi pi-address-book" aria-hidden="true"></i>
+                <p>No contacts yet.</p>
+                <p class="contacts__empty-hint">Add the first one and it will show up here.</p>
+                <p-button label="New contact" icon="pi pi-plus" size="small" (onClick)="onAdd()" />
               }
             </div>
           </td>

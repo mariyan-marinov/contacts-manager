@@ -4,6 +4,9 @@ namespace ContactsManager.Domain.Contacts;
 
 public sealed record PhoneNumber
 {
+    /// <summary>Stateless and thread-safe, so one instance serves every construction.</summary>
+    private static readonly PhoneNumberValidator Validator = new();
+
     private PhoneNumber(string value) => Value = value;
 
     public string Value { get; }
@@ -11,7 +14,7 @@ public sealed record PhoneNumber
     public static PhoneNumber Create(string? value)
     {
         var phone = new PhoneNumber((value ?? string.Empty).Trim());
-        DomainValidationException.ThrowIfInvalid(new PhoneNumberValidator().Validate(phone));
+        DomainValidationException.ThrowIfInvalid(Validator.Validate(phone));
         return phone;
     }
 

@@ -76,6 +76,65 @@ public class GetContactsQueryTests
             () => Send(api, new GetContactsQuery { Page = page, Size = size }));
     }
 
+    /// <summary>
+    /// A typed <c>%</c> means those characters, not "match anything". Without escaping, searching
+    /// for it returned every contact in the book.
+    /// </summary>
+    [Theory]
+    [InlineData("%")]
+    [InlineData("_")]
+    [InlineData("%%")]
+    [InlineData("Bakke%")]
+    [InlineData("B_kker")]
+    public async Task Treats_a_like_wildcard_as_a_character_to_search_for(string search)
+    {
+        await using var api = new ContactsApiFactory();
+
+        var page = await Send(api, new GetContactsQuery { Search = search, Size = 100 });
+
+        Assert.Empty(page.Items);
+        Assert.Equal(0, page.Total);
+    }
+
+    [Fact]
+    public async Task Escapes_the_escape_character_so_a_typed_backslash_is_literal()
+    {
+        await using var api = new ContactsApiFactory();
+
+        var page = await Send(api, new GetContactsQuery { Search = @"\", Size = 100 });
+
+        Assert.Empty(page.Items);
+    }
+
+    [Fact]
+    public async Task Still_matches_a_plain_substring_of_a_name_or_a_city()
+    {
+        await using var api = new ContactsApiFactory();
+
+        var page = await Send(api, new GetContactsQuery { Search = "bakke", Size = 100 });
+
+        Assert.Equal("Bakker", Assert.Single(page.Items).Surname);
+    }
+
+    /// <summary>
+    /// A descending sort mirrors its ascending twin, second key included — so paging through one is
+    /// the reverse of paging through the other rather than half-reversed.
+    /// </summary>
+    [Fact]
+    public async Task Reverses_the_whole_ordering_when_the_direction_is_descending()
+    {
+        await using var api = new ContactsApiFactory();
+
+        var ascending = await Send(api, new GetContactsQuery { Sort = "city", Size = 100 });
+        var descending = await Send(
+            api,
+            new GetContactsQuery { Sort = "city", Direction = "desc", Size = 100 });
+
+        Assert.Equal(
+            ascending.Items.Select(item => item.Id).Reverse(),
+            descending.Items.Select(item => item.Id));
+    }
+
     private static async Task<Application.Common.PagedResult<Application.Features.Contacts.Contracts.ContactListItem>> Send(
         ContactsApiFactory api,
         GetContactsQuery query)

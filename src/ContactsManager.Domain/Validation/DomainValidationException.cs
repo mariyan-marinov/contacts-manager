@@ -10,10 +10,16 @@ namespace ContactsManager.Domain.Validation;
 public sealed class DomainValidationException : Exception
 {
     public DomainValidationException(IEnumerable<ValidationFailure> failures)
-        : base(Describe(failures))
+        : this(failures.ToArray())
     {
-        Failures = failures.ToArray();
     }
+
+    /// <summary>
+    /// The array is what both the message and <see cref="Failures"/> read, so a lazy sequence is
+    /// walked once rather than twice.
+    /// </summary>
+    private DomainValidationException(ValidationFailure[] failures)
+        : base(Describe(failures)) => Failures = failures;
 
     public IReadOnlyCollection<ValidationFailure> Failures { get; }
 

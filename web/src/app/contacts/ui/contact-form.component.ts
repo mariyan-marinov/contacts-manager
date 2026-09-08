@@ -1,32 +1,44 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
+  computed,
   effect,
   inject,
   input,
   output,
 } from '@angular/core';
-import {
-  AbstractControl,
-  FormBuilder,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { DatePickerModule } from 'primeng/datepicker';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 import { SelectModule } from 'primeng/select';
 import { applyFieldErrors, clearServerError, serverErrorKey } from '../../core/field-errors';
+import { contactRules } from '../data-access/contact-rules';
+import { contactValidators, dateOfBirthRules } from '../data-access/contact-validators';
 import { ContactDetail, ContactInput } from '../data-access/contact.model';
 import { countries } from '../data-access/countries';
+import { fieldMessages } from './field-messages';
+import { FormFieldComponent } from './form-field.component';
 
-/** Mirrors the server rules that are cheap to check, so an obvious slip costs no round trip. */
-const namePattern = /^\p{L}[\p{L}\p{M}\s'-]*$/u;
-const phonePattern = /^[0-9+\-() ]+$/;
-const postalCodePattern = /^[A-Za-z0-9][A-Za-z0-9 -]*$/;
-const ibanPattern = /^[A-Za-z]{2}[0-9]{2}[A-Za-z0-9 ]+$/;
-const maximumAgeInYears = 130;
+/**
+ * Every path the form can show a message for, in the order they appear on screen — which is also
+ * the order the first invalid one is looked for in when a submit is refused.
+ */
+const fieldPaths = [
+  'firstName',
+  'surname',
+  'dateOfBirth',
+  'phoneNumber',
+  'iban',
+  'address.street',
+  'address.houseNumber',
+  'address.postalCode',
+  'address.city',
+  'address.country',
+] as const;
 
 @Component({
   selector: 'app-contact-form',
@@ -34,6 +46,7 @@ const maximumAgeInYears = 130;
   imports: [
     ButtonModule,
     DatePickerModule,
+    FormFieldComponent,
     InputTextModule,
     MessageModule,
     ReactiveFormsModule,
@@ -51,57 +64,65 @@ export class ContactFormComponent {
   readonly cancelled = output<void>();
 
   protected readonly countries = countries;
-  protected readonly today = new Date();
+
+  /** Today, and the earliest birthday the server will accept, for the picker's own bounds. */
+  protected readonly today = startOfToday();
   protected readonly earliest = new Date(
-    this.today.getFullYear() - maximumAgeInYears,
+    this.today.getFullYear() - contactRules.maximumAgeInYears,
     this.today.getMonth(),
     this.today.getDate(),
   );
 
   private readonly formBuilder = inject(FormBuilder);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
+  /**
+   * Every rule comes from `contactValidators`, which is built from the same constants the server
+   * validates against — so a field cannot be stricter or looser here than it is there.
+   */
   protected readonly form = this.formBuilder.group({
-    firstName: this.formBuilder.nonNullable.control('', [
-      Validators.required,
-      Validators.maxLength(50),
-      Validators.pattern(namePattern),
-    ]),
-    surname: this.formBuilder.nonNullable.control('', [
-      Validators.required,
-      Validators.maxLength(50),
-      Validators.pattern(namePattern),
-    ]),
-    dateOfBirth: this.formBuilder.control<Date | null>(null, [Validators.required]),
+    firstName: this.formBuilder.nonNullable.control('', contactValidators.namePart),
+    surname: this.formBuilder.nonNullable.control('', contactValidators.namePart),
+    dateOfBirth: this.formBuilder.control<Date | null>(null, dateOfBirthRules(this.today)),
     address: this.formBuilder.group({
-      street: this.formBuilder.nonNullable.control('', [
-        Validators.required,
-        Validators.maxLength(100),
-      ]),
-      houseNumber: this.formBuilder.nonNullable.control('', [Validators.maxLength(10)]),
-      postalCode: this.formBuilder.nonNullable.control('', [
-        Validators.required,
-        Validators.maxLength(12),
-        Validators.pattern(postalCodePattern),
-      ]),
-      city: this.formBuilder.nonNullable.control('', [
-        Validators.required,
-        Validators.maxLength(85),
-      ]),
-      country: this.formBuilder.nonNullable.control('', [Validators.required]),
+      street: this.formBuilder.nonNullable.control('', contactValidators.street),
+      houseNumber: this.formBuilder.nonNullable.control('', contactValidators.houseNumber),
+      postalCode: this.formBuilder.nonNullable.control('', contactValidators.postalCode),
+      city: this.formBuilder.nonNullable.control('', contactValidators.city),
+      country: this.formBuilder.nonNullable.control('', contactValidators.country),
     }),
-    phoneNumber: this.formBuilder.nonNullable.control('', [
-      Validators.required,
-      Validators.minLength(8),
-      Validators.maxLength(20),
-      Validators.pattern(phonePattern),
-    ]),
-    // Length and shape only. The mod-97 checksum stays a server rule, and its message comes back
-    // bound to this control rather than as a toast.
-    iban: this.formBuilder.nonNullable.control('', [
-      Validators.required,
-      Validators.minLength(15),
-      Validators.pattern(ibanPattern),
-    ]),
+    phoneNumber: this.formBuilder.nonNullable.control('', contactValidators.phoneNumber),
+    iban: this.formBuilder.nonNullable.control('', contactValidators.iban),
+  });
+
+  /**
+   * A reactive form is not a signal, so its own event stream is what tells the messages below to
+   * look again — status, value and touched changes all arrive here. Reading it once means the
+   * messages are recomputed when the form actually changes rather than on every check.
+   */
+  private readonly formEvents = toSignal(this.form.events, { initialValue: null });
+
+  /** Path to the messages under that field, computed once per form change rather than per field. */
+  protected readonly messages = computed(() => {
+    this.formEvents();
+
+    const byPath: Record<string, readonly string[]> = {};
+
+    for (const path of fieldPaths) {
+      byPath[path] = fieldMessages(path, this.form.get(path));
+    }
+
+    return byPath;
+  });
+
+  /** Messages the server sent that match no control, so they are shown with the buttons instead. */
+  protected readonly formMessages = computed(() => {
+    this.formEvents();
+
+    const errors = this.form.errors;
+    const homeless = errors === null ? undefined : errors[serverErrorKey];
+
+    return Array.isArray(homeless) ? (homeless as readonly string[]) : [];
   });
 
   constructor() {
@@ -116,8 +137,18 @@ export class ContactFormComponent {
     effect(() => {
       const homeless = applyFieldErrors(this.form, this.fieldErrors());
 
-      if (homeless.length > 0) {
-        this.form.setErrors({ [serverErrorKey]: homeless });
+      this.form.setErrors(homeless.length > 0 ? { [serverErrorKey]: homeless } : null);
+    });
+
+    // One subscription rather than an (input) handler on all ten controls: a server message must
+    // not outlive the value that caused it, wherever in the form that value was changed.
+    this.form.valueChanges.subscribe(() => {
+      for (const path of fieldPaths) {
+        const control = this.form.get(path);
+
+        if (control !== null) {
+          clearServerError(control);
+        }
       }
     });
   }
@@ -126,30 +157,10 @@ export class ContactFormComponent {
     return this.form.dirty;
   }
 
-  protected messagesFor(path: string): readonly string[] {
-    const control = this.form.get(path);
-
-    if (control === null || !control.touched || control.errors === null) {
-      return [];
-    }
-
-    const server = control.errors[serverErrorKey];
-
-    return Array.isArray(server) ? (server as readonly string[]) : [describe(path, control)];
-  }
-
-  /** A server message must not outlive the value that caused it. */
-  protected onFieldInput(path: string): void {
-    const control = this.form.get(path);
-
-    if (control !== null) {
-      clearServerError(control);
-    }
-  }
-
   protected onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.focusFirstInvalid();
       return;
     }
 
@@ -159,15 +170,28 @@ export class ContactFormComponent {
   protected onCancel(): void {
     this.cancelled.emit();
   }
+
+  /**
+   * A refused submit has to say so somewhere the person is looking. On a form this tall the first
+   * problem is often above the fold, so the cursor goes to it rather than leaving Save looking dead.
+   */
+  private focusFirstInvalid(): void {
+    const invalid = this.host.nativeElement.querySelector<HTMLElement>(
+      'input.ng-invalid, .p-datepicker.ng-invalid input, .p-select.ng-invalid',
+    );
+
+    invalid?.focus();
+    invalid?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
 }
 
-type FormValue = ContactFormComponent['form'] extends { getRawValue(): infer T } ? T : never;
+type FormValue = ReturnType<ContactFormComponent['form']['getRawValue']>;
 
 function toFormValue(contact: ContactDetail) {
   return {
     firstName: contact.firstName,
     surname: contact.surname,
-    dateOfBirth: new Date(contact.dateOfBirth),
+    dateOfBirth: fromIsoDate(contact.dateOfBirth),
     address: {
       street: contact.address.street,
       houseNumber: contact.address.houseNumber ?? '',
@@ -180,24 +204,43 @@ function toFormValue(contact: ContactDetail) {
   };
 }
 
+/** Trimmed on the way out, because trimmed text is what the rules were checked against. */
 function toContactInput(value: FormValue): ContactInput {
+  const houseNumber = value.address.houseNumber.trim();
+
   return {
-    firstName: value.firstName,
-    surname: value.surname,
+    firstName: value.firstName.trim(),
+    surname: value.surname.trim(),
     dateOfBirth: toIsoDate(value.dateOfBirth),
     address: {
-      street: value.address.street,
-      houseNumber: value.address.houseNumber === '' ? null : value.address.houseNumber,
-      postalCode: value.address.postalCode,
-      city: value.address.city,
+      street: value.address.street.trim(),
+      houseNumber: houseNumber === '' ? null : houseNumber,
+      postalCode: value.address.postalCode.trim(),
+      city: value.address.city.trim(),
       country: value.address.country,
     },
-    phoneNumber: value.phoneNumber,
-    iban: value.iban,
+    phoneNumber: value.phoneNumber.trim(),
+    iban: value.iban.trim(),
   };
 }
 
-/** The date picker works in local time; the API wants a plain calendar date. */
+/**
+ * A date of birth is a calendar date, not an instant, and the date picker works in local time.
+ * `new Date('1988-04-12')` parses that as midnight *UTC*, which the picker then renders in local
+ * time — a day earlier for anyone west of Greenwich, and a day earlier again every time the contact
+ * is saved. Building the date from its parts keeps it the day it says it is.
+ */
+function fromIsoDate(value: string): Date | null {
+  const parts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+
+  if (parts === null) {
+    return null;
+  }
+
+  return new Date(Number(parts[1]), Number(parts[2]) - 1, Number(parts[3]));
+}
+
+/** The inverse of {@link fromIsoDate}: local parts out, so the round trip is lossless. */
 function toIsoDate(date: Date | null): string {
   if (date === null) {
     return '';
@@ -209,30 +252,8 @@ function toIsoDate(date: Date | null): string {
   return `${date.getFullYear()}-${month}-${day}`;
 }
 
-function describe(path: string, control: AbstractControl): string {
-  const errors = control.errors ?? {};
-  const label = labels[path] ?? path;
-
-  if ('required' in errors) {
-    return `${label} is required.`;
-  }
-
-  if ('maxlength' in errors || 'minlength' in errors) {
-    return `${label} is the wrong length.`;
-  }
-
-  return `${label} is not in a form we recognise.`;
+/** Midnight local, so a date-only comparison is not decided by the time the page was opened. */
+function startOfToday(): Date {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
 }
-
-const labels: Readonly<Record<string, string>> = {
-  firstName: 'First name',
-  surname: 'Surname',
-  dateOfBirth: 'Date of birth',
-  'address.street': 'Street',
-  'address.houseNumber': 'House number',
-  'address.postalCode': 'Postal code',
-  'address.city': 'City',
-  'address.country': 'Country',
-  phoneNumber: 'Phone number',
-  iban: 'IBAN',
-};

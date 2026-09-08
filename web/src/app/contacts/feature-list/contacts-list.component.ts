@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -9,7 +9,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
-import { parseContactQuery, toQueryParams } from '../data-access/contact-query-params';
+import { parseContactQuery } from '../data-access/contact-query-params';
 import {
   ContactListItem,
   ContactListView,
@@ -31,6 +31,7 @@ import { contactsFeature } from '../data-access/state/contacts.feature';
     InputIconModule,
     InputTextModule,
     MessageModule,
+    RouterLink,
     TableModule,
     TooltipModule,
   ],
@@ -46,9 +47,10 @@ export class ContactsListComponent {
   protected readonly contacts = this.store.selectSignal(contactsFeature.selectAllContacts);
   protected readonly total = this.store.selectSignal(contactsFeature.selectTotal);
   protected readonly loading = this.store.selectSignal(contactsFeature.selectLoading);
-  protected readonly error = this.store.selectSignal(contactsFeature.selectError);
+  protected readonly error = this.store.selectSignal(contactsFeature.selectListError);
   protected readonly query = this.store.selectSignal(contactsFeature.selectQuery);
   protected readonly firstRow = this.store.selectSignal(contactsFeature.selectFirstRow);
+  protected readonly emptyReason = this.store.selectSignal(contactsFeature.selectEmptyReason);
 
   /** Ephemeral: what is in the box right now, before the debounce turns it into a query. */
   protected readonly searchTerm = signal('');
@@ -57,17 +59,6 @@ export class ContactsListComponent {
     const fromUrl = parseContactQuery(this.route.snapshot.queryParamMap);
     this.searchTerm.set(fromUrl.search ?? '');
     this.store.dispatch(contactsPageActions.opened({ query: fromUrl }));
-
-    // Keeps the address bar in step with the store, so a reload or a shared link lands on the
-    // same view. replaceUrl, because paging is not a browser-history event.
-    effect(() => {
-      const query = this.query();
-      void this.router.navigate([], {
-        relativeTo: this.route,
-        queryParams: toQueryParams(query),
-        replaceUrl: true,
-      });
-    });
   }
 
   /**
@@ -108,8 +99,23 @@ export class ContactsListComponent {
     void this.router.navigate(['/contacts/new']);
   }
 
-  protected onEdit(contact: ContactListItem): void {
+  /**
+   * Opening a contact reads it; changing one is a separate, deliberate step from there.
+   *
+   * The whole row responds, so a click that landed on the link or on one of the action buttons is
+   * left to that control — checked here rather than by stopping propagation on wrappers, which
+   * would make plain layout elements look interactive to anything reading the markup.
+   */
+  protected onOpen(contact: ContactListItem, event: Event): void {
+    if (event.target instanceof Element && event.target.closest('a, button') !== null) {
+      return;
+    }
+
     void this.router.navigate(['/contacts', contact.id]);
+  }
+
+  protected onEdit(contact: ContactListItem): void {
+    void this.router.navigate(['/contacts', contact.id, 'edit']);
   }
 
   protected onDelete(contact: ContactListItem): void {
@@ -127,5 +133,13 @@ export class ContactsListComponent {
       accept: () =>
         this.store.dispatch(contactsPageActions.deleteConfirmed({ id: contact.id, name })),
     });
+  }
+
+  /**
+   * The table hands its row template an untyped value. Naming the type once here is what lets the
+   * rest of the template be checked, rather than every expression in it being `any`.
+   */
+  protected asContact(row: unknown): ContactListItem {
+    return row as ContactListItem;
   }
 }

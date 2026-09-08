@@ -75,7 +75,7 @@ public static partial class ContactRules
 
     private static bool HasEnoughDigits(string value) => value.Count(char.IsAsciiDigit) >= PhoneMinimumDigits;
 
-    [GeneratedRegex(@"^\p{L}[\p{L}\p{M}\s'\-]*$")]
+    [GeneratedRegex(@"^\p{L}[\p{L}\p{M}\s'-]*$")]
     private static partial Regex PersonNamePattern();
 
     [GeneratedRegex(@"^[A-Z]{2}[0-9]{2}[A-Z0-9]+$")]
@@ -84,6 +84,6 @@ public static partial class ContactRules
     [GeneratedRegex(@"^[0-9+\-() ]+$")]
     private static partial Regex PhonePattern();
 
-    [GeneratedRegex(@"^[A-Za-z0-9][A-Za-z0-9 \-]*$")]
+    [GeneratedRegex(@"^[A-Za-z0-9][A-Za-z0-9 -]*$")]
     private static partial Regex PostalCodePattern();
 }

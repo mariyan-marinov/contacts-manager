@@ -59,16 +59,22 @@ public sealed class Contact
 
     public Iban Iban { get; private set; }
 
+    /// <summary>Stateless and thread-safe, so one instance serves every construction.</summary>
+    private static readonly ContactValidator Validator = new();
+
+    /// <summary>
+    /// No clock is needed: every rule that depends on today lives on the value object that owns the
+    /// date, and <see cref="DateOfBirth.Create"/> has already applied it by the time it arrives here.
+    /// </summary>
     public static Contact Create(
         PersonName name,
         DateOfBirth dateOfBirth,
         Address address,
         PhoneNumber phone,
-        Iban iban,
-        TimeProvider clock)
+        Iban iban)
     {
         var contact = new Contact(ContactId.New(), name, dateOfBirth, address, phone, iban);
-        DomainValidationException.ThrowIfInvalid(new ContactValidator(DateOfBirth.Today(clock)).Validate(contact));
+        DomainValidationException.ThrowIfInvalid(Validator.Validate(contact));
         return contact;
     }
 

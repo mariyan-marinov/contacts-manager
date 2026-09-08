@@ -37,8 +37,7 @@ public class ContactTests
             DateOfBirth.Create(new DateOnly(1990, 3, 14), Clock),
             Address.Create("Keizersgracht", "241", "1016 EA", "Amsterdam", "NL"),
             PhoneNumber.Create("+31 6 1234 5678"),
-            Iban.Create("NL91ABNA0417164300"),
-            Clock));
+            Iban.Create("NL91ABNA0417164300")));
 
         Assert.Contains("Name", error.Message, StringComparison.Ordinal);
     }
@@ -99,6 +98,5 @@ public class ContactTests
         DateOfBirth.Create(new DateOnly(1990, 3, 14), Clock),
         Address.Create("Keizersgracht", "241", "1016 EA", "Amsterdam", "NL"),
         PhoneNumber.Create("+31 6 1234 5678"),
-        Iban.Create("NL91ABNA0417164300"),
-        Clock);
+        Iban.Create("NL91ABNA0417164300"));
 }

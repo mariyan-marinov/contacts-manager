@@ -31,9 +31,9 @@ export class ContactsApi {
     return this.http.get<PagedResult<ContactListItem>>(ContactsApi.endpoint, { params });
   }
 
-  /** The one request that returns an unmasked IBAN, and only for the contact being edited. */
+  /** The one request that returns an unmasked IBAN, and only for the contact being opened. */
   getById(id: string): Observable<ContactDetail> {
-    return this.http.get<ContactDetail>(`${ContactsApi.endpoint}/${id}`);
+    return this.http.get<ContactDetail>(`${ContactsApi.endpoint}/${encodeURIComponent(id)}`);
   }
 
   create(contact: ContactInput): Observable<void> {
@@ -45,10 +45,13 @@ export class ContactsApi {
    * in the meantime the server answers 409, which is the only way this can fail on a valid form.
    */
   update(id: string, contact: ContactInput, version: number): Observable<void> {
-    return this.http.put<void>(`${ContactsApi.endpoint}/${id}`, { ...contact, version });
+    return this.http.put<void>(`${ContactsApi.endpoint}/${encodeURIComponent(id)}`, {
+      ...contact,
+      version,
+    });
   }
 
   remove(id: string): Observable<void> {
-    return this.http.delete<void>(`${ContactsApi.endpoint}/${id}`);
+    return this.http.delete<void>(`${ContactsApi.endpoint}/${encodeURIComponent(id)}`);
   }
 }

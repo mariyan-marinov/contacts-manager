@@ -26,8 +26,7 @@ internal sealed class CreateContactCommandHandler(
                 command.Address.City,
                 command.Address.Country),
             PhoneNumber.Create(command.PhoneNumber),
-            Iban.Create(command.Iban),
-            clock);
+            Iban.Create(command.Iban));
 
         contacts.Add(contact);
         await unitOfWork.SaveChangesAsync(cancellationToken);

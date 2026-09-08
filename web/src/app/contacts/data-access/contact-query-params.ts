@@ -2,6 +2,13 @@ import { ParamMap } from '@angular/router';
 import { ContactQuery, defaultContactQuery, isSortField } from './contact.model';
 
 /**
+ * The largest page and the longest search the API will accept. Asking for more is answered with a
+ * 400, so a hand-edited URL is brought inside the limits rather than sent on to be refused.
+ */
+const maximumSize = 100;
+const maximumSearchLength = 100;
+
+/**
  * The query lives in the URL as well as the store, so a reload or a shared link lands on the same
  * view. Anything unrecognised falls back to the default rather than being passed to the server.
  */
@@ -10,11 +17,11 @@ export function parseContactQuery(params: ParamMap): Partial<ContactQuery> {
   const direction = params.get('direction');
 
   return {
-    search: params.get('search'),
+    search: params.get('search')?.slice(0, maximumSearchLength) ?? null,
     sort: isSortField(sort) ? sort : defaultContactQuery.sort,
     direction: direction === 'desc' ? 'desc' : 'asc',
     page: positiveInteger(params.get('page'), defaultContactQuery.page),
-    size: positiveInteger(params.get('size'), defaultContactQuery.size),
+    size: Math.min(positiveInteger(params.get('size'), defaultContactQuery.size), maximumSize),
   };
 }
 

@@ -1,0 +1,89 @@
+.view {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 56rem;
+
+  &__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  &__titles {
+    flex: 1 1 12rem;
+    min-width: 0;
+    padding-block-start: 0.15rem;
+  }
+
+  &__loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 4rem 1rem;
+    color: var(--p-text-muted-color);
+
+    p {
+      margin: 0;
+      font-size: 0.9rem;
+    }
+  }
+
+  &__panel {
+    padding: 1.5rem;
+  }
+
+  /* Two columns where there is room, so a name and a birthday sit side by side
+     the way they do on the form that edits them. */
+  &__fields {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.25rem 2rem;
+    margin: 0;
+  }
+
+  &__field {
+    min-width: 0;
+
+    dt {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--p-text-muted-color);
+    }
+
+    dd {
+      display: flex;
+      flex-direction: column;
+      margin: 0.3rem 0 0;
+      font-size: 0.95rem;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  &__address-line {
+    line-height: 1.45;
+  }
+
+  &__numeric {
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__iban {
+    font-family: var(--app-font-mono);
+    letter-spacing: 0.04em;
+  }
+}
+
+@media (min-width: 40rem) {
+  .view__fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .view__field--wide {
+    grid-column: 1 / -1;
+  }
+}

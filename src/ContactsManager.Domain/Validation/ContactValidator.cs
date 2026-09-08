@@ -4,18 +4,19 @@ using FluentValidation;
 namespace ContactsManager.Domain.Validation;
 
 /// <summary>
-/// The aggregate-level check run by <see cref="Contact.Create"/>. Each value object has already
-/// validated itself, so today this only asserts that every part is present — it exists as the one
-/// obvious place for a rule that spans more than one field.
+/// The aggregate-level check run by <see cref="Contact.Create"/>. Every part arrives as a value
+/// object that already validated itself in its own factory, so re-running those rules here would
+/// only check the same text a second time — this asserts that each part is present, and exists as
+/// the one obvious place for a rule that spans more than one field.
 /// </summary>
 public sealed class ContactValidator : AbstractValidator<Contact>
 {
-    public ContactValidator(DateOnly today)
+    public ContactValidator()
     {
-        RuleFor(contact => contact.Name).NotNull().SetValidator(new PersonNameValidator());
-        RuleFor(contact => contact.DateOfBirth).NotNull().SetValidator(new DateOfBirthValidator(today));
-        RuleFor(contact => contact.Address).NotNull().SetValidator(new AddressValidator());
-        RuleFor(contact => contact.Phone).NotNull().SetValidator(new PhoneNumberValidator());
-        RuleFor(contact => contact.Iban).NotNull().SetValidator(new IbanValidator());
+        RuleFor(contact => contact.Name).NotNull();
+        RuleFor(contact => contact.DateOfBirth).NotNull();
+        RuleFor(contact => contact.Address).NotNull();
+        RuleFor(contact => contact.Phone).NotNull();
+        RuleFor(contact => contact.Iban).NotNull();
     }
 }

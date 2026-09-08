@@ -4,6 +4,9 @@ namespace ContactsManager.Domain.Contacts;
 
 public sealed record Iban
 {
+    /// <summary>Stateless and thread-safe, so one instance serves every construction.</summary>
+    private static readonly IbanValidator Validator = new();
+
     private Iban(string value) => Value = value;
 
     public string Value { get; }
@@ -18,7 +21,7 @@ public sealed record Iban
     public static Iban Create(string? value)
     {
         var iban = new Iban(IbanText.Normalise(value));
-        DomainValidationException.ThrowIfInvalid(new IbanValidator().Validate(iban));
+        DomainValidationException.ThrowIfInvalid(Validator.Validate(iban));
         return iban;
     }
 

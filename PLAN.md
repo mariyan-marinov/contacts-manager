@@ -25,7 +25,7 @@ a six-field form into an enterprise platform.
 | **Sensitive data** | Mod-97 validated, masked in lists | The list DTO carries only `ibanMasked`; the full IBAN exists solely on the detail response. Masking is a server decision, not CSS. |
 | **Client state** | NgRx store plus component signals | Server-owned data and anything that must survive navigation goes in the store; ephemeral UI state stays in signals. One rule, no case-by-case argument. |
 | **Querying** | Server-side search, sort, page | `GetContactsQuery` translates to SQL and returns `PagedResult<T>`; `p-table` runs in lazy mode. Gives the query side something to actually do. |
-| **Navigation** | Routed list and detail pages | `/contacts`, `/contacts/new`, `/contacts/:id` — deep-linkable, and a more honest app shell than one page of dialogs. |
+| **Navigation** | Routed list, contact and form pages | `/contacts`, `/contacts/new`, `/contacts/:id`, `/contacts/:id/edit` — deep-linkable, and a more honest app shell than one page of dialogs. Reading a contact and changing one are separate routes, so looking up a phone number does not put every field of the record within reach of a stray keystroke. |
 | **Deletion** | Physical delete | `DELETE /api/contacts/{id}` removes the row. Soft delete is a costed follow-up, not a gap — see [Noted improvement](#noted-improvement--soft-delete). |
 | **End-to-end** | Full stack via Compose | Playwright drives the real Angular build against the real API and a throwaway Postgres. No route mocking, so a test can fail for a backend reason. |
 
@@ -48,9 +48,12 @@ defined once, in `Domain/Validation`, and reused by both validation entry points
 | Concurrency | `Version` (`uint`) | `xmin` | System column mapped as the row version; returned on the detail DTO, required on `PUT`, a mismatch returns 409 |
 | Audit | — | `created_at`, `updated_at timestamptz` | Stamped by a `SaveChanges` interceptor, never by hand |
 
-One btree index on `(surname, first_name)` covers the default sort. Search is `ILIKE '%term%'`
-across first name, surname and city; a trigram index is the documented upgrade path if the row
-count ever justifies one.
+One btree index on `(surname, first_name)` covers the default sort. Search is `LIKE '%term%'` over
+`lower()` on both sides across first name, surname and city, with the caller's `%` and `_` escaped
+so a typed wildcard is a character to look for rather than one to match with. Postgres' own `ILIKE`
+would say this more directly, but it is a provider extension and the Application layer references no
+provider. A trigram index over `lower()` is the documented upgrade path if the row count ever
+justifies one.
 
 **Query contract.** `page` is 1-based and defaults to 1. `size` defaults to 20 and is capped at 100.
 `sort` accepts only `surname`, `firstName`, `city` or `dateOfBirth`, resolved through a whitelist so

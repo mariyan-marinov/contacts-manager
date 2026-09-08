@@ -1,0 +1,40 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.field__label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: light-dark(var(--p-surface-600), var(--p-surface-300));
+}
+
+.field__required {
+  color: var(--p-red-500);
+}
+
+.field__hint {
+  font-size: 0.75rem;
+  color: var(--p-text-muted-color);
+}
+
+/* Collapses to nothing while the field is valid, so it adds no gap of its own. */
+.field__errors:empty {
+  display: none;
+}
+
+.field__errors {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/* A simple message is inline text; it should read as help under the field rather
+   than as another boxed control. PrimeNG owns the class on its own element, so
+   it is matched rather than added to. */
+:host ::ng-deep .p-message-simple {
+  font-size: 0.78rem;
+  line-height: 1.35;
+}

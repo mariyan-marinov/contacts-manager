@@ -75,6 +75,5 @@ public static class ContactSeeder
             DateOfBirth.Create(new DateOnly(year, month, day), clock),
             Address.Create(street, houseNumber, postalCode, city, country),
             PhoneNumber.Create(phone),
-            Iban.Create(iban),
-            clock);
+            Iban.Create(iban));
 }

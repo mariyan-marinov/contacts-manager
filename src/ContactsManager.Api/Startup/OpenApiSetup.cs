@@ -109,7 +109,7 @@ internal static class OpenApiSetup
     /// <summary>CLR type to the example rendered for it. A factory per entry, because a JsonNode has one parent.</summary>
     private static readonly Dictionary<Type, Func<JsonNode>> Examples = new()
     {
-        [typeof(AddressRequest)] = Address,
+        [typeof(ContactAddress)] = Address,
         [typeof(CreateContactCommand)] = CreateContact,
         [typeof(UpdateContactCommand)] = UpdateContact,
         [typeof(ContactDetail)] = ContactDetail,

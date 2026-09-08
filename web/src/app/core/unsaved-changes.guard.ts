@@ -9,13 +9,20 @@ export interface HasUnsavedChanges {
 
 /** Leaving a half-filled form should be a decision, not an accident. */
 export const unsavedChangesGuard: CanDeactivateFn<HasUnsavedChanges> = (component) => {
+  // Injected before the early return: inject() belongs at the top of an injection context, not
+  // behind a branch that decides whether it runs.
+  const confirmation = inject(ConfirmationService);
+
   if (!component.hasUnsavedChanges()) {
     return true;
   }
 
-  const confirmation = inject(ConfirmationService);
-
   return new Observable<boolean>((subscriber) => {
+    const answer = (leave: boolean) => {
+      subscriber.next(leave);
+      subscriber.complete();
+    };
+
     confirmation.confirm({
       header: 'Discard your changes?',
       message: 'This contact has edits that have not been saved.',
@@ -23,14 +30,10 @@ export const unsavedChangesGuard: CanDeactivateFn<HasUnsavedChanges> = (componen
       acceptLabel: 'Discard',
       rejectLabel: 'Keep editing',
       acceptButtonStyleClass: 'p-button-danger',
-      accept: () => {
-        subscriber.next(true);
-        subscriber.complete();
-      },
-      reject: () => {
-        subscriber.next(false);
-        subscriber.complete();
-      },
+      accept: () => answer(true),
+      // Every way out other than Discard arrives here: the Keep editing button, the close icon and
+      // Escape all emit reject, so the router always gets an answer.
+      reject: () => answer(false),
     });
   });
 };

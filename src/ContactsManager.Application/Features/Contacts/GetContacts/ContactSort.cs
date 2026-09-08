@@ -1,4 +1,5 @@
 using System.Collections.Frozen;
+using System.Linq.Expressions;
 using ContactsManager.Domain.Contacts;
 
 namespace ContactsManager.Application.Features.Contacts.GetContacts;
@@ -24,21 +25,31 @@ internal static class ContactSort
         new[] { Ascending, Descending }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// Every ordering carries a second key, so rows with the same city or the same birthday still
-    /// come back in a settled order — without one, two requests for the same page could disagree
-    /// about which rows belong on it.
+    /// Every ordering names a second key, so rows with the same city or the same birthday still come
+    /// back in a settled order — without one, two requests for the same page could disagree about
+    /// which rows belong on it.
     /// </summary>
     internal static IOrderedQueryable<Contact> Apply(IQueryable<Contact> contacts, string field, bool descending) =>
-        (field.ToLowerInvariant(), descending) switch
+        field.ToLowerInvariant() switch
         {
-            ("surname", false) => contacts.OrderBy(c => c.Name.Surname).ThenBy(c => c.Name.First),
-            ("surname", true) => contacts.OrderByDescending(c => c.Name.Surname).ThenByDescending(c => c.Name.First),
-            ("firstname", false) => contacts.OrderBy(c => c.Name.First).ThenBy(c => c.Name.Surname),
-            ("firstname", true) => contacts.OrderByDescending(c => c.Name.First).ThenByDescending(c => c.Name.Surname),
-            ("city", false) => contacts.OrderBy(c => c.Address.City).ThenBy(c => c.Name.Surname),
-            ("city", true) => contacts.OrderByDescending(c => c.Address.City).ThenBy(c => c.Name.Surname),
-            ("dateofbirth", false) => contacts.OrderBy(c => c.DateOfBirth.Value).ThenBy(c => c.Name.Surname),
-            ("dateofbirth", true) => contacts.OrderByDescending(c => c.DateOfBirth.Value).ThenBy(c => c.Name.Surname),
+            "surname" => Order(contacts, c => c.Name.Surname, c => c.Name.First, descending),
+            "firstname" => Order(contacts, c => c.Name.First, c => c.Name.Surname, descending),
+            "city" => Order(contacts, c => c.Address.City, c => c.Name.Surname, descending),
+            "dateofbirth" => Order(contacts, c => c.DateOfBirth.Value, c => c.Name.Surname, descending),
             _ => throw new ArgumentOutOfRangeException(nameof(field), field, "Unsupported sort field."),
         };
+
+    /// <summary>
+    /// The direction is applied in one place, so the second key always follows the first: a
+    /// descending sort reads as the mirror of its ascending twin rather than reversing only half of
+    /// the ordering.
+    /// </summary>
+    private static IOrderedQueryable<Contact> Order<TPrimary, TSecondary>(
+        IQueryable<Contact> contacts,
+        Expression<Func<Contact, TPrimary>> primary,
+        Expression<Func<Contact, TSecondary>> secondary,
+        bool descending) =>
+        descending
+            ? contacts.OrderByDescending(primary).ThenByDescending(secondary)
+            : contacts.OrderBy(primary).ThenBy(secondary);
 }

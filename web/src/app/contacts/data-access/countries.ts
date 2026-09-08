@@ -25,3 +25,13 @@ function buildCountries(): Country[] {
     .map((code) => ({ code, name: names.of(code) ?? code }))
     .sort((left, right) => left.name.localeCompare(right.name));
 }
+
+/**
+ * The readable name for a code, for the places that show a country rather than let one be chosen.
+ * A code that is not in the list is given back as it came, so an unexpected value is still legible.
+ */
+export function countryName(code: string): string {
+  return byCode.get(code) ?? code;
+}
+
+const byCode = new Map(countries.map((country) => [country.code, country.name]));

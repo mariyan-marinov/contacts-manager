@@ -23,7 +23,7 @@ internal sealed class GetContactByIdQueryHandler(IContactReadContext read)
                 contact.Name.First,
                 contact.Name.Surname,
                 contact.DateOfBirth.Value,
-                new AddressRequest(
+                new ContactAddress(
                     contact.Address.Street,
                     contact.Address.HouseNumber,
                     contact.Address.PostalCode,

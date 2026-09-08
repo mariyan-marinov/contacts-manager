@@ -330,9 +330,14 @@ Specific decisions inside
 - **`saved` is a separate flag from `saving`.** A reactive form stays `dirty` after a successful save,
   so without `saved` the unsaved-changes guard would ask the user about work already committed. That
   is a real bug the flag exists to prevent, not defensive state.
-- **`selectFirstRow` and `selectIsEmpty` are selectors, not template arithmetic.** `p-table` counts
-  rows from zero while the query counts pages from one; that conversion is written once, next to the
-  state it converts, and is unit-tested.
+- **`selectFirstRow` and `selectEmptyReason` are selectors, not template arithmetic.** `p-table`
+  counts rows from zero while the query counts pages from one; that conversion is written once, next
+  to the state it converts, and is unit-tested. `selectEmptyReason` answers *why* the list is empty,
+  because the offer has to match the reason: a search that matched nothing wants a way to clear it,
+  and an address book with nothing in it wants a way to add the first contact.
+- **`listError` and `formError` are separate fields.** One string serving both pages meant a failed
+  delete could still be on screen when the form opened, and a failed detail load was reported twice
+  at once — as a banner and as the page's own message. An error belongs to the page that caused it.
 
 ### Effects own every HTTP call
 
@@ -350,11 +355,24 @@ Notable effect decisions in
   template.
 - **`switchMap` on load, so a slow first response cannot overwrite a fast second one.** With
   `mergeMap` the table could settle on the results of a query the user has already changed.
-- **The effect re-reads the query from the store** (`store.select(...).pipe(take(1))`) rather than
-  carrying parameters in the action. The reducer has already merged the change, so the store holds
-  the single truth of what to ask for; passing parameters alongside would create a second one.
-- **A delete triggers `refreshed`.** Removing a row locally would leave the current page one short
-  and `total` stale; asking the server again is both simpler and correct.
+- **The write effects deliberately do not use `switchMap`.** Cancelling a request only abandons the
+  response; the server may already have committed it. So a save is `exhaustMap` — a second click
+  while one is in flight is ignored rather than raced — and a delete is `mergeMap`, because deleting
+  two contacts in quick succession must delete both.
+- **A save decides create or update from `editingId`, not from whether a contact happens to have
+  loaded.** `editingId` is what the route said. Keying it off `selected` meant that an edit page
+  whose detail failed to load would, on submit, silently create a second copy of the contact — which
+  is what `updates rather than creates when the contact being edited failed to load` pins.
+- **The effect re-reads the query from the store** with `concatLatestFrom` rather than carrying
+  parameters in the action. The reducer has already merged the change, so the store holds the single
+  truth of what to ask for; passing parameters alongside would create a second one.
+- **A delete triggers `refreshed`** — or a step back a page, when the row removed was the last one on
+  the last page. Removing a row locally would leave the current page one short and `total` stale;
+  asking the server again is both simpler and correct, and an empty page nobody chose to visit reads
+  as a bug rather than as the end of the list.
+- **The URL is written by one effect, `syncUrlWithQuery`.** It used to be written from a
+  `router.navigate` inside the list component's `effect()` *and* from `returnToList`, which left two
+  owners for one address bar.
 - **Toasts are one effect over four actions**, so every mutation has a consistent voice and there is
   exactly one place to change it.
 
@@ -382,8 +400,24 @@ cannot drift apart because there is one form.
 Client validators **mirror** the shared backend rules — the same character classes, the same
 lengths — so the common mistakes cost no round trip. The duplication is acknowledged: two languages
 cannot share a regex, and the honest options were "mirror the cheap rules" or "make every keystroke
-mistake a network round trip". What is *not* mirrored is the mod-97 checksum. That stays a server
-rule, and this is where the field-error plumbing pays off:
+mistake a network round trip".
+
+What makes the mirror trustworthy is that it cannot drift silently. Every limit and every pattern
+lives in one file, [contact-rules.ts](web/src/app/contacts/data-access/contact-rules.ts), written
+exactly as `ContactRules` writes it — and `ContactRulesParityTests` reads that file and fails the
+build if any constant or pattern disagrees with the C# it claims to mirror. It also fails when a rule
+is added on one side with no counterpart on the other, so the mirror cannot quietly fall behind.
+That test was worth writing immediately: the mirror had *already* drifted in three places. The IBAN's
+maximum length, the phone number's minimum digit count and the date-of-birth range were all enforced
+by the server and by nothing on the client, so a form that looked valid earned a 400 the client had
+promised to prevent.
+
+The rules are applied through [contact-validators.ts](web/src/app/contacts/data-access/contact-validators.ts),
+which judges the same tidied text the server judges — trimmed, and for an IBAN normalised — so a
+trailing space cannot fail on one side and pass on the other.
+
+What is *not* mirrored is the mod-97 checksum. That stays a server rule, and this is where the
+field-error plumbing pays off:
 
 `applyFieldErrors` in [field-errors.ts](web/src/app/core/field-errors.ts) walks the API's error keys
 and calls `form.get(path)` — which works for `address.city` precisely because the server camel-cases
@@ -392,9 +426,20 @@ no matching control are returned rather than dropped, so a form-level error is s
 silently swallowed. `clearServerError` removes a server message as soon as the value changes, so a
 message cannot outlive its cause.
 
-Two smaller decisions worth naming: `toIsoDate` formats the date picker's local `Date` by hand
-because `toISOString()` would shift a birthday across a timezone boundary; and the field labels for
-generic messages live in one map, so "First name is required." is not written five times.
+A date of birth is a calendar date, not an instant, and both directions of that conversion are
+written by hand for the same reason. `toIsoDate` formats the picker's local `Date` rather than
+calling `toISOString()`, which would shift a birthday across a timezone boundary — and `fromIsoDate`
+builds the `Date` from its parts rather than calling `new Date('1988-04-12')`, which parses as
+midnight **UTC** and is then read back with local getters. That second half was missing at first: west
+of Greenwich the picker showed the 11th, and saving an untouched contact moved its birthday back a
+day, every time. `is held as local midnight of the day the server sent` is the assertion that pins
+it, written so that it fails in every timezone the bug would matter in rather than only in the one
+the suite happens to run in.
+
+Field messages live in [field-messages.ts](web/src/app/contacts/ui/field-messages.ts), which names
+the rule that failed rather than the fact that something did: "Surname must be 50 characters or
+fewer.", not "Surname is the wrong length." The limit is quoted from the error Angular raised, so
+there is no second table of lengths to keep in step with the validators.
 
 The unsaved-changes guard is a `CanDeactivateFn` that asks the component, wrapping PrimeNG's
 `ConfirmationService` in an `Observable<boolean>`. Leaving a half-filled form should be a decision
@@ -403,12 +448,14 @@ lose.
 
 ### The URL is a second home for the query
 
-The list component parses the query parameters on construction, dispatches them as the initial query,
-and keeps the address bar in step with the store through an `effect`, with `replaceUrl: true` because
-paging is not a browser-history event. A reload or a shared link therefore lands on the same view.
+The list component parses the query parameters on construction and dispatches them as the initial
+query. Writing the address bar back is a *single* effect, `syncUrlWithQuery`, with `replaceUrl: true`
+because paging is not a browser-history event. A reload or a shared link therefore lands on the same
+view. It used to be written from the component as well, which left one address bar with two owners.
 [contact-query-params.ts](web/src/app/contacts/data-access/contact-query-params.ts) treats anything
-unrecognised as the default rather than forwarding it to the server, and it is unit-tested as a
-round-trip.
+unrecognised as the default rather than forwarding it to the server, and it clamps what it cannot
+default — a hand-edited `?size=5000` becomes the largest page the API will serve rather than a 400
+the user did nothing to deserve. It is unit-tested as a round-trip.
 
 This is duplication of state between the URL and the store, and it is the one place where the "one
 truth" rule bends. The store remains the truth; the URL is a projection written from it and parsed
@@ -573,13 +620,13 @@ Stated plainly, because a defence that claims no downsides is not a defence.
 | Cost | Why it is accepted |
 |---|---|
 | Four projects and a dispatcher for six fields | The patterns are the brief; the boundaries are what make them real rather than nominal |
-| Client validators mirror server rules | Two languages cannot share a regex, and the alternative is a round trip per typo. Only the cheap rules are mirrored — the checksum stays server-side |
+| Client validators mirror server rules | Two languages cannot share a regex, and the alternative is a round trip per typo. Only the cheap rules are mirrored — the checksum stays server-side — and `ContactRulesParityTests` fails the build if the two copies ever disagree |
 | `IQueryable` reaches the Application layer | Contained to read-only files, and it keeps the query visible instead of hiding it behind a repository method |
 | Two hand-edited lines in the initial migration | Forced by Postgres's `xmin` and by EF Core 10's inability to index complex-type properties; annotated at both sites and guarded by `has-pending-model-changes` |
 | `::ng-deep`, deprecated | Two uses, both `:host`-scoped and commented; the alternative was a global rule that would break the paginator's select |
 | The query lives in both the URL and the store | The store stays the truth; the URL is written from it and parsed once, which is what makes links shareable |
 | `xmin` ties concurrency to Postgres | The provider is fixed by the brief, and the mapping is one property to change |
-| `ContactValidator` barely earns its place today | Kept as the single validation call in `Contact.Create` and the obvious seam for a cross-field rule; the code admits this in a comment |
+| `ContactValidator` barely earns its place today | Kept as the single validation call in `Contact.Create` and the obvious seam for a cross-field rule; the code admits this in a comment. It asserts presence only — re-running each value object's own rules there would have checked the same text a second time |
 | No auth, no soft delete, no encryption at rest | Out of scope by decision, not oversight — see [PLAN.md](PLAN.md#deliberately-not-in-scope), which also costs out soft delete layer by layer |
 
 ---
@@ -640,10 +687,12 @@ needed the markup provides an element of its own.
 be themed in one scheme and forgotten in the other, because both values are stated where the colour
 is declared.
 
-**"Search is `ILIKE '%term%'` — that will not scale."** True beyond a few thousand rows, and it is the
-right cost at twelve. The upgrade path is documented rather than guessed: a trigram index on the
-searched columns, at which point the query shape does not change. Building it now would be indexing
-for a load that does not exist.
+**"Search is `LIKE '%term%'` over `lower()` — that will not scale."** True beyond a few thousand
+rows, and it is the right cost at twelve. The upgrade path is documented rather than guessed: a
+trigram index over `lower()` on the searched columns, at which point the query shape does not
+change. Building it now would be indexing for a load that does not exist. What the search *does*
+do is escape the caller's `%` and `_` before they reach the pattern, so someone searching for "50%"
+gets the three characters they typed rather than every row in the table.
 
 **"Physical delete with no history."** A decision with a costed alternative, not a gap.
 [PLAN.md](PLAN.md#noted-improvement--soft-delete) works soft delete through every layer it touches —

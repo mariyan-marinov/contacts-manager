@@ -7,6 +7,6 @@ public sealed record CreateContactCommand(
     string FirstName,
     string Surname,
     DateOnly DateOfBirth,
-    AddressRequest Address,
+    ContactAddress Address,
     string PhoneNumber,
     string Iban) : ICommand<Guid>;

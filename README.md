@@ -80,11 +80,17 @@ only ever calls relative URLs.
 # The contract tests need Postgres running; the unit tests do not.
 dotnet test
 
-# Frontend unit tests: reducer, selectors, effects, URL round-trip, error mapping
+# Frontend unit tests: reducer, selectors, effects, the form, URL round-trip, error mapping
 cd web && npx ng test
 
-# Lint and production build
-cd web && npx ng lint && npx ng build
+# Formatting, lint and production build — the same three gates CI runs
+cd web && npm run format:check && npx ng lint && npx ng build
+
+# Reformat rather than just report
+cd web && npm run format
+
+# The backend has the same formatting gate
+dotnet format --verify-no-changes
 
 # End to end, in a real browser. Playwright starts the API and the dev server itself,
 # so only Postgres needs to be up.

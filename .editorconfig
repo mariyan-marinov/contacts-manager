@@ -48,12 +48,31 @@ dotnet_naming_symbols.interface.applicable_kinds = interface
 dotnet_naming_style.prefix_with_i.required_prefix = I
 dotnet_naming_style.prefix_with_i.capitalization = pascal_case
 
+# A private constant or static readonly field is a fixed value rather than state, and the whole
+# codebase spells those PascalCase. These two rules come first, so the camelCase rule below applies
+# only to the instance fields it was meant for.
+dotnet_naming_rule.private_constants_are_pascal_case.symbols = private_constant
+dotnet_naming_rule.private_constants_are_pascal_case.style = pascal_case
+dotnet_naming_rule.private_constants_are_pascal_case.severity = warning
+dotnet_naming_symbols.private_constant.applicable_kinds = field
+dotnet_naming_symbols.private_constant.applicable_accessibilities = private
+dotnet_naming_symbols.private_constant.required_modifiers = const
+
+dotnet_naming_rule.private_static_readonly_is_pascal_case.symbols = private_static_readonly
+dotnet_naming_rule.private_static_readonly_is_pascal_case.style = pascal_case
+dotnet_naming_rule.private_static_readonly_is_pascal_case.severity = warning
+dotnet_naming_symbols.private_static_readonly.applicable_kinds = field
+dotnet_naming_symbols.private_static_readonly.applicable_accessibilities = private
+dotnet_naming_symbols.private_static_readonly.required_modifiers = static, readonly
+
 dotnet_naming_rule.private_fields_are_camel_case.symbols = private_field
 dotnet_naming_rule.private_fields_are_camel_case.style = camel_case
 dotnet_naming_rule.private_fields_are_camel_case.severity = warning
 dotnet_naming_symbols.private_field.applicable_kinds = field
 dotnet_naming_symbols.private_field.applicable_accessibilities = private
+
 dotnet_naming_style.camel_case.capitalization = camel_case
+dotnet_naming_style.pascal_case.capitalization = pascal_case
 
 # Formatting stays a suggestion: whitespace should never fail a build
 dotnet_diagnostic.IDE0055.severity = suggestion

@@ -8,28 +8,28 @@ namespace ContactsManager.Application.Features.Contacts.Contracts;
 /// actually store, so nothing is rejected here that the domain would have accepted. Errors are named
 /// after the field the caller sent.
 /// </summary>
-internal sealed class AddressRequestValidator : AbstractValidator<AddressRequest>
+internal sealed class ContactAddressValidator : AbstractValidator<ContactAddress>
 {
-    public AddressRequestValidator()
+    public ContactAddressValidator()
     {
         RuleFor(address => Text.Trimmed(address.Street))
             .Street()
-            .OverridePropertyName(nameof(AddressRequest.Street));
+            .OverridePropertyName(nameof(ContactAddress.Street));
 
         RuleFor(address => Text.Trimmed(address.HouseNumber))
             .HouseNumber()
-            .OverridePropertyName(nameof(AddressRequest.HouseNumber));
+            .OverridePropertyName(nameof(ContactAddress.HouseNumber));
 
         RuleFor(address => Text.Trimmed(address.PostalCode))
             .PostalCode()
-            .OverridePropertyName(nameof(AddressRequest.PostalCode));
+            .OverridePropertyName(nameof(ContactAddress.PostalCode));
 
         RuleFor(address => Text.Trimmed(address.City))
             .City()
-            .OverridePropertyName(nameof(AddressRequest.City));
+            .OverridePropertyName(nameof(ContactAddress.City));
 
         RuleFor(address => Text.UpperTrimmed(address.Country))
             .CountryCode()
-            .OverridePropertyName(nameof(AddressRequest.Country));
+            .OverridePropertyName(nameof(ContactAddress.Country));
     }
 }

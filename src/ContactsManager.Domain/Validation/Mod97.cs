@@ -14,7 +14,9 @@ public static class Mod97
     /// </summary>
     public static bool IsValid(string? iban)
     {
-        if (string.IsNullOrWhiteSpace(iban) || iban.Length is < 15 or > 34)
+        if (string.IsNullOrWhiteSpace(iban)
+            || iban.Length < ContactRules.IbanMinLength
+            || iban.Length > ContactRules.IbanMaxLength)
         {
             return false;
         }

@@ -9,7 +9,7 @@ public sealed record ContactDetail(
     string FirstName,
     string Surname,
     DateOnly DateOfBirth,
-    AddressRequest Address,
+    ContactAddress Address,
     string PhoneNumber,
     string Iban,
     uint Version);

@@ -46,14 +46,22 @@ describe('contacts reducer', () => {
     const failed = reducer(initial, contactsApiActions.loadFailed({ message: 'gone wrong' }));
     const reloading = reducer(failed, contactsPageActions.queryChanged({ query: { page: 2 } }));
 
-    expect(failed.error).toBe('gone wrong');
-    expect(reloading.error).toBeNull();
+    expect(failed.listError).toBe('gone wrong');
+    expect(reloading.listError).toBeNull();
     expect(reloading.loading).toBe(true);
   });
 
   it('replaces the previous page instead of accumulating rows', () => {
-    const first = reducer(initial, contactsApiActions.loaded({ result: page([contact('1', 'Bakker'), contact('2', 'Brandt')], 4) }));
-    const second = reducer(first, contactsApiActions.loaded({ result: page([contact('3', 'Cavendish')], 4) }));
+    const first = reducer(
+      initial,
+      contactsApiActions.loaded({
+        result: page([contact('1', 'Bakker'), contact('2', 'Brandt')], 4),
+      }),
+    );
+    const second = reducer(
+      first,
+      contactsApiActions.loaded({ result: page([contact('3', 'Cavendish')], 4) }),
+    );
 
     expect(first.ids).toEqual(['1', '2']);
     expect(second.ids).toEqual(['3']);
@@ -62,18 +70,23 @@ describe('contacts reducer', () => {
 
   it('stops loading and keeps the message when a load fails', () => {
     const loading = reducer(initial, contactsPageActions.opened({ query: {} }));
-    const failed = reducer(loading, contactsApiActions.loadFailed({ message: 'Cannot reach the server.' }));
+    const failed = reducer(
+      loading,
+      contactsApiActions.loadFailed({ message: 'Cannot reach the server.' }),
+    );
 
     expect(loading.loading).toBe(true);
     expect(failed.loading).toBe(false);
-    expect(failed.error).toBe('Cannot reach the server.');
+    expect(failed.listError).toBe('Cannot reach the server.');
   });
 });
 
 describe('contacts selectors', () => {
   const loaded = reducer(
     reducer(undefined, { type: '@@init' }),
-    contactsApiActions.loaded({ result: page([contact('1', 'Bakker'), contact('2', 'Brandt')], 30) }),
+    contactsApiActions.loaded({
+      result: page([contact('1', 'Bakker'), contact('2', 'Brandt')], 30),
+    }),
   );
 
   it('lists the contacts in the order the server sent them', () => {
@@ -85,6 +98,8 @@ describe('contacts selectors', () => {
 
   it('translates a one-based page into the row the table starts at', () => {
     expect(contactsFeature.selectFirstRow.projector({ ...defaultContactQuery, page: 1 })).toBe(0);
-    expect(contactsFeature.selectFirstRow.projector({ ...defaultContactQuery, page: 3, size: 20 })).toBe(40);
+    expect(
+      contactsFeature.selectFirstRow.projector({ ...defaultContactQuery, page: 3, size: 20 }),
+    ).toBe(40);
   });
 });

@@ -55,9 +55,7 @@ describe('applyFieldErrors', () => {
       version: ['Version must be the version returned when the contact was read.'],
     });
 
-    expect(homeless).toEqual([
-      'Version must be the version returned when the contact was read.',
-    ]);
+    expect(homeless).toEqual(['Version must be the version returned when the contact was read.']);
   });
 
   it('does nothing when there are no field errors', () => {

@@ -23,7 +23,7 @@ internal sealed class UpdateContactCommandValidator : AbstractValidator<UpdateCo
 
         RuleFor(command => command.Address)
             .NotNull()
-            .SetValidator(new AddressRequestValidator());
+            .SetValidator(new ContactAddressValidator());
 
         RuleFor(command => Text.Trimmed(command.PhoneNumber))
             .PhoneNumber()

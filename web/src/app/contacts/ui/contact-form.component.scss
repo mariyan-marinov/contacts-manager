@@ -53,27 +53,13 @@
     font-size: 0.8rem;
     color: var(--p-text-muted-color);
   }
-}
 
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  min-width: 0;
-
-  &__label {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: light-dark(var(--p-surface-600), var(--p-surface-300));
-  }
-
-  &__required {
-    color: var(--p-red-500);
-  }
-
-  &__hint {
-    font-size: 0.75rem;
-    color: var(--p-text-muted-color);
+  /* Server messages that matched no control, shown where the eye lands before Save. */
+  &__form-errors {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0 1.5rem 1.25rem;
   }
 }
 
@@ -124,12 +110,5 @@
   .p-datepicker.ng-invalid.ng-touched .p-inputtext,
   .p-select.ng-invalid.ng-touched {
     border-color: var(--p-form-field-invalid-border-color);
-  }
-
-  /* A simple message is inline text; it should read as help under the field
-     rather than as another boxed control. */
-  .p-message-simple {
-    font-size: 0.78rem;
-    line-height: 1.35;
   }
 }
