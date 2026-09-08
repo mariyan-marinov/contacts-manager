@@ -1,0 +1,11 @@
+# The repository stores text with LF, which is what .editorconfig declares and what the formatting
+# gate in CI checks. Without this, a Windows checkout brings CRLF back into the working tree and
+# `dotnet format --verify-no-changes` fails on files nobody edited.
+* text=auto eol=lf
+
+# Left exactly as they are.
+*.png binary
+*.jpg binary
+*.ico binary
+*.pdf binary
+*.zip binary
