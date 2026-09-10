@@ -12,6 +12,42 @@ sitting.
 | **Frontend** | Angular 22 (zoneless), NgRx 22, PrimeNG 22 |
 | **Tests** | xUnit v3, Vitest, Playwright |
 
+## Searching the list
+
+The search box looks across the full name and the city. The name is matched as it is written in the
+list — first name, a space, then surname — so a term may run across both columns:
+
+| Typing | Finds |
+|---|---|
+| `nne Bak` | Sanne **Bak**ker |
+| `Sanne B` | **Sanne B**akker |
+| `bakke` | Sanne **Bakke**r |
+| `amsterdam` | everyone in Amsterdam |
+
+Matching the joined name rather than the two columns separately is what makes the first two work:
+neither column contains `nne Bak` on its own. It also covers each part whole, so searching a first
+name or a surname by itself behaves as it always did. Two different contacts are never joined into
+one searchable string — `Bakker Milan` finds nothing.
+
+The box is also deliberately unhurried:
+
+| | |
+|---|---|
+| **Starts at** | 2 characters, after trimming |
+| **Debounce** | 300 ms after typing stops |
+
+A single character matches a large slice of any address book, so it is treated as the start of a
+search rather than a search: nothing is sent, the list stays unfiltered, and the box says *"Keep
+typing — 2 characters or more to search."* Deleting back down to one character clears the filter
+again rather than leaving the list narrowed by a term no longer on screen.
+
+Once there are two characters, the request waits for typing to settle. Both numbers live in
+[contact-search.ts](web/src/app/contacts/data-access/contact-search.ts), and a term that would not
+change what is on screen — too short, or the one already applied — is dropped rather than sent.
+
+Both are client-side judgements about a search box. The API itself accepts any term up to 100
+characters, so a caller with its own idea of a useful search is not argued with.
+
 ## Prerequisites
 
 - [.NET SDK 10.0.303](https://dotnet.microsoft.com/download) or a later 10.0 feature band
@@ -48,8 +84,12 @@ docker compose up -d db       # start PostgreSQL
 dotnet run --project src/ContactsManager.Api
 ```
 
-The API listens on <http://localhost:5272>. It applies migrations and seeds twelve contacts on
+The API listens on <http://localhost:5272>. It applies migrations and seeds fifty-five contacts on
 startup in the Development and Test environments, so there is nothing else to set up.
+
+Seeding is skipped once the table holds anything at all, so a database created before the seed grew
+keeps whatever it already had. `docker compose down -v db && docker compose up -d db` gives you the
+current set.
 
 In Development the OpenAPI document is at `/openapi/v1.json`, with two readers over the same
 document: Swagger UI at <http://localhost:5272/swagger> and Scalar at
@@ -102,7 +142,7 @@ npx playwright show-report        # after a run
 ```
 
 The end-to-end suite runs the API under the `Test` environment, which is the only environment where
-`POST /api/test/reset` exists. Each spec calls it, so every one starts from the same twelve
+`POST /api/test/reset` exists. Each spec calls it, so every one starts from the same fifty-five
 contacts.
 
 ## Working on the database
@@ -162,3 +202,26 @@ Two details worth knowing before reading the code:
 - **The IBAN is masked by the server, not the client.** The list response carries only
   `ibanMasked`; the full value exists solely on the detail response, alongside the `version` a
   client must send back to update the contact.
+
+## How it was built
+
+AI coding assistants were used throughout, as is normal practice for a developer working today. They
+were not used to decide what to build or how to build it. Every architectural choice, every pattern
+and every standard in this repository was set by hand first and then implemented under it — and the
+process is written down rather than asserted:
+
+- **Decisions came before code.** [PLAN.md](PLAN.md) fixes the layering, the data model, the query
+  contract and the scope — including what is deliberately left out — with the alternative each
+  choice beat. Nothing was designed by whatever a model produced first.
+- **Patterns and conventions were dictated, not accepted.** The house rules at the top of
+  [PROMPTS.md](PROMPTS.md) state the naming, the language idioms, the layer boundaries and the
+  behaviour expected of each layer, and they were pasted with every step. Output that did not match
+  them was redone rather than tidied afterwards.
+- **Every step ended at a gate.** A numbered list of commands — build, lint, the relevant tests,
+  plus whatever was specific to that step — whose real output had to be pasted back rather than
+  summarised, and which had to pass before the next step started. The standing instruction when one
+  failed was to fix the cause, never the check. The same checks run in CI on every push, as three
+  jobs: `api`, `web` and `e2e`.
+- **The result is defended, not just delivered.** [RATIONALE.md](RATIONALE.md) justifies the code
+  that exists file by file, names the costs it accepts and answers the questions a reviewer is most
+  likely to ask. Anything that could not be defended that way did not stay in.

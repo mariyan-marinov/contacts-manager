@@ -58,11 +58,19 @@ internal sealed class GetContactsQueryHandler(IContactReadContext read)
     }
 
     /// <summary>
-    /// One box searches first name, surname and city. Both sides are lower-cased so the match is
-    /// case-insensitive whatever the column collation says — Postgres' own <c>ILIKE</c> would say
-    /// this more directly, but it is a provider extension and this layer does not reference one. It
-    /// stays a <c>LIKE</c> predicate so the filtering happens in the database rather than over rows
-    /// dragged into memory.
+    /// One box searches the full name and the city.
+    /// <para>
+    /// The name is matched against `first surname` joined by a space — the order the list shows it
+    /// in — rather than against the two columns separately. That is what lets a term run across
+    /// both of them: `nne Bak` finds Sanne Bakker, which neither column would match on its own. It
+    /// also subsumes the single-column case, since the joined string contains each part whole.
+    /// </para>
+    /// <para>
+    /// Both sides are lower-cased so the match is case-insensitive whatever the column collation
+    /// says — Postgres' own <c>ILIKE</c> would say this more directly, but it is a provider
+    /// extension and this layer does not reference one. It stays a <c>LIKE</c> predicate so the
+    /// filtering happens in the database rather than over rows dragged into memory.
+    /// </para>
     /// </summary>
     private static IQueryable<Contact> ApplySearch(IQueryable<Contact> contacts, string? search)
     {
@@ -74,8 +82,10 @@ internal sealed class GetContactsQueryHandler(IContactReadContext read)
         var pattern = $"%{EscapeLikePattern(search.Trim().ToLowerInvariant())}%";
 
         return contacts.Where(contact =>
-            EF.Functions.Like(contact.Name.First.ToLower(), pattern, LikeEscape)
-            || EF.Functions.Like(contact.Name.Surname.ToLower(), pattern, LikeEscape)
+            EF.Functions.Like(
+                (contact.Name.First + " " + contact.Name.Surname).ToLower(),
+                pattern,
+                LikeEscape)
             || EF.Functions.Like(contact.Address.City.ToLower(), pattern, LikeEscape));
     }
 

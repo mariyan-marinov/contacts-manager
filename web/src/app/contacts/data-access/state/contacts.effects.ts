@@ -8,8 +8,8 @@ import {
   EMPTY,
   catchError,
   debounceTime,
-  distinctUntilChanged,
   exhaustMap,
+  filter,
   map,
   mergeMap,
   of,
@@ -18,11 +18,11 @@ import {
 } from 'rxjs';
 import { ApiError } from '../../../core/api-error';
 import { toQueryParams } from '../contact-query-params';
+import { searchDebounceMs } from '../contact-search';
 import { ContactsApi } from '../contacts.api';
 import { contactFormActions, contactsApiActions, contactsPageActions } from './contacts.actions';
 import { contactsFeature } from './contacts.feature';
 
-const searchDebounceMs = 300;
 const toastLifeMs = 4000;
 
 type OutcomeAction =
@@ -58,15 +58,24 @@ export const loadContacts = createEffect(
   { functional: true },
 );
 
-/** Typing should not fire a request per keystroke, and a new search belongs on page one. */
+/**
+ * Typing should not fire a request per keystroke, and a new search belongs on page one.
+ *
+ * What settles is compared against the search that is actually applied, not against the previous
+ * keystroke: typing a letter and deleting it again leaves the term it started from, and a term too
+ * short to search with leaves the list unfiltered — neither is worth a request. Reading the applied
+ * value *after* the debounce is also what makes this safe, because the store has not yet caught up
+ * while someone is still typing.
+ */
 export const debounceSearch = createEffect(
-  (actions$ = inject(Actions)) =>
+  (actions$ = inject(Actions), store = inject(Store)) =>
     actions$.pipe(
       ofType(contactsPageActions.searchChanged),
       debounceTime(searchDebounceMs),
-      // Typing a letter and deleting it again leaves the same search, and needs no second request.
-      distinctUntilChanged((before, after) => before.search === after.search),
-      map(({ search }) => contactsPageActions.queryChanged({ query: { search, page: 1 } })),
+      concatLatestFrom(() => store.select(contactsFeature.selectQuery)),
+      // The same test the reducer makes when it decides whether to show the table as loading.
+      filter(([{ search }, query]) => search !== query.search),
+      map(([{ search }]) => contactsPageActions.queryChanged({ query: { search, page: 1 } })),
     ),
   { functional: true },
 );

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { ConfirmationService } from 'primeng/api';
@@ -10,6 +10,11 @@ import { MessageModule } from 'primeng/message';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
 import { parseContactQuery } from '../data-access/contact-query-params';
+import {
+  isSearchTooShort,
+  searchMinimumLength,
+  toSearchQuery,
+} from '../data-access/contact-search';
 import {
   ContactListItem,
   ContactListView,
@@ -55,6 +60,14 @@ export class ContactsListComponent {
   /** Ephemeral: what is in the box right now, before the debounce turns it into a query. */
   protected readonly searchTerm = signal('');
 
+  /** Something has been typed, but not yet enough of it to search with. */
+  protected readonly searchTooShort = computed(() => isSearchTooShort(this.searchTerm()));
+
+  /** The search the list is actually filtered by, which is not always what is in the box. */
+  protected readonly appliedSearch = computed(() => this.query().search);
+
+  protected readonly searchMinimumLength = searchMinimumLength;
+
   constructor() {
     const fromUrl = parseContactQuery(this.route.snapshot.queryParamMap);
     this.searchTerm.set(fromUrl.search ?? '');
@@ -86,9 +99,14 @@ export class ContactsListComponent {
     this.store.dispatch(contactsPageActions.queryChanged({ query: view }));
   }
 
+  /**
+   * The box keeps whatever was typed; the store is told what that means as a query, which is
+   * nothing until there are enough characters to be worth asking about. The effect decides whether
+   * the settled term is a change worth a request, so this stays a plain translation.
+   */
   protected onSearch(term: string): void {
     this.searchTerm.set(term);
-    this.store.dispatch(contactsPageActions.searchChanged({ search: term === '' ? null : term }));
+    this.store.dispatch(contactsPageActions.searchChanged({ search: toSearchQuery(term) }));
   }
 
   protected onRetry(): void {

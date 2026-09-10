@@ -27,6 +27,18 @@
     border-block-end: 1px solid var(--app-border);
   }
 
+  /* Sits beside the box it is about. It renders empty rather than being removed,
+     so the id the input is described by is always there for a screen reader. */
+  &__search-hint {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--p-text-muted-color);
+
+    &:empty {
+      display: none;
+    }
+  }
+
   /* Keeps a column title and its sort arrows on one line when the table is
      scrolled down to its narrowest. */
   &__column {

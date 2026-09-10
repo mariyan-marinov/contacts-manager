@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using ContactsManager.Api.Tests.Support;
+using ContactsManager.Infrastructure.Persistence;
 
 namespace ContactsManager.Api.Tests;
 
@@ -132,7 +133,7 @@ public class ContactsContractTests
 
         var body = await Body(response);
 
-        Assert.Equal(12, body.GetProperty("total").GetInt32());
+        Assert.Equal(ContactSeeder.SeededCount, body.GetProperty("total").GetInt32());
         Assert.Equal(2, body.GetProperty("page").GetInt32());
         Assert.Equal(5, body.GetProperty("size").GetInt32());
         Assert.Equal(5, body.GetProperty("items").GetArrayLength());

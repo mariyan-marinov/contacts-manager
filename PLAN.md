@@ -49,17 +49,24 @@ defined once, in `Domain/Validation`, and reused by both validation entry points
 | Audit | — | `created_at`, `updated_at timestamptz` | Stamped by a `SaveChanges` interceptor, never by hand |
 
 One btree index on `(surname, first_name)` covers the default sort. Search is `LIKE '%term%'` over
-`lower()` on both sides across first name, surname and city, with the caller's `%` and `_` escaped
-so a typed wildcard is a character to look for rather than one to match with. Postgres' own `ILIKE`
-would say this more directly, but it is a provider extension and the Application layer references no
-provider. A trigram index over `lower()` is the documented upgrade path if the row count ever
-justifies one.
+`lower(first_name || ' ' || surname)` and `lower(city)`, with the caller's `%` and `_` escaped so a
+typed wildcard is a character to look for rather than one to match with. Postgres' own `ILIKE` would
+say this more directly, but it is a provider extension and the Application layer references no
+provider. A trigram index over those same two expressions is the documented upgrade path if the row
+count ever justifies one — matching the joined name does not change that, since the index would be
+declared over the expression the query already uses.
 
 **Query contract.** `page` is 1-based and defaults to 1. `size` defaults to 20 and is capped at 100.
 `sort` accepts only `surname`, `firstName`, `city` or `dateOfBirth`, resolved through a whitelist so
 no client string ever reaches the ordering expression; `direction` is `asc` or `desc`, defaulting to
 `surname asc`. Anything outside those bounds is a 400, not a silent clamp. `PagedResult<T>` carries
 `items`, `total`, `page` and `size` — the page count is the client's arithmetic.
+
+`search` is optional and unfiltered when absent. It matches the **joined name** — `first_name || ' '
+|| surname`, the order the list writes it in — and the city, so a term may run across both name
+columns: `nne Bak` finds Sanne Bakker, which neither column matches alone. The API accepts any term
+up to 100 characters; the **minimum of two characters is a client-side judgement**, not part of the
+contract, so a caller with its own idea of a useful search is not argued with.
 
 **Masking format.** `Iban.Masked` is length-independent: first four characters, four asterisks, last
 four — `NL91****0300`. The length is not disclosed, and the e2e assertion has something stable to
@@ -173,8 +180,12 @@ public interface ISender {
 
 - **`ContactsDbContext`** with one `IEntityTypeConfiguration` per aggregate; value objects mapped
   through `ComplexProperty` and converters. All EF knowledge stops at this project boundary.
-- **The seeder** inserts twelve realistic contacts across several countries when the table is empty
-  — enough rows to make paging and sorting visibly work.
+- **The seeder** inserts fifty-five realistic contacts across some thirty countries when the table
+  is empty — more than the default page of twenty, so paging, sorting and searching are visibly
+  doing something rather than being taken on trust. Every IBAN is checksum-valid and every contact
+  is built through the domain factories, so bad seed data fails at startup rather than lying in the
+  database. `ContactSeeder.SeededCount` is the one place the number is written; the tests assert
+  against it.
 - **Endpoints and their codes:** `GET /api/contacts` → 200; `GET /api/contacts/{id}` → 200 or 404;
   `POST` → 201 with a `Location` header; `PUT /{id}` → 204, 404 or 409; `DELETE /{id}` → 204 or 404.
 - **Two DTO shapes.** `ContactListItem` carries `ibanMasked` and city; `ContactDetail` carries the

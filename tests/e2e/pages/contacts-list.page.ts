@@ -29,18 +29,39 @@ export class ContactsListPage {
 
     return Promise.all(
       rows.map(async (row) =>
-        (await row.locator("td").first().innerText()).trim(),
+        (
+          await row.locator("td").nth(ContactsListPage.column.surname).innerText()
+        ).trim(),
       ),
+    );
+  }
+
+  async firstNames(): Promise<string[]> {
+    const rows = await this.rows().all();
+
+    return Promise.all(
+      rows.map(async (row) =>
+        (
+          await row.locator("td").nth(ContactsListPage.column.firstName).innerText()
+        ).trim(),
+      ),
+    );
+  }
+
+  /** The column titles, left to right. */
+  async columnTitles(): Promise<string[]> {
+    return (await this.page.getByRole("columnheader").allInnerTexts()).map((title) =>
+      title.trim(),
     );
   }
 
   /**
    * Columns are read by position, so they are named here rather than counted at each call site:
-   * surname, first name, date of birth, city, phone, IBAN, actions.
+   * first name, surname, date of birth, city, phone, IBAN, actions.
    */
   private static readonly column = {
-    surname: 0,
-    firstName: 1,
+    firstName: 0,
+    surname: 1,
     dateOfBirth: 2,
     city: 3,
     phone: 4,
@@ -86,12 +107,32 @@ export class ContactsListPage {
     await this.page.getByLabel("Search contacts").fill(term);
   }
 
+  /** The note beside the box, which says when a term is not yet long enough to search with. */
+  searchHint(): Locator {
+    return this.page.locator("#search-hint");
+  }
+
   async sortBySurname(): Promise<void> {
     await this.page.getByRole("columnheader", { name: "Surname" }).click();
   }
 
+  /**
+   * The paginator's report is not a signal that the page arrived: it is driven by the query in the
+   * store, which changes the moment the button is clicked, while the rows change only when the
+   * response comes back. Waiting for the first surname to differ is what tells the settled page
+   * from the one still on screen.
+   */
   async goToNextPage(): Promise<void> {
+    const firstSurname = (await this.firstSurname().innerText()).trim();
+
     await this.page.getByRole("button", { name: "Next Page" }).click();
+
+    await expect(this.firstSurname()).not.toHaveText(firstSurname);
+  }
+
+  /** The surname of the top row — the value the default ordering is by, so it changes per page. */
+  firstSurname(): Locator {
+    return this.rows().first().locator("td").nth(ContactsListPage.column.surname);
   }
 
   /**
@@ -113,6 +154,14 @@ export class ContactsListPage {
 
   async edit(fullName: string): Promise<void> {
     await this.page.getByRole("button", { name: `Edit ${fullName}` }).click();
+  }
+
+  /**
+   * Edits whatever is at the top of the page currently shown. A spec about the view surviving a
+   * trip through the form should not also have to know which contact the seed puts on page two.
+   */
+  async editFirstRow(): Promise<void> {
+    await this.rows().first().getByRole("button", { name: /^Edit / }).click();
   }
 
   async delete(fullName: string): Promise<void> {

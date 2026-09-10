@@ -51,6 +51,34 @@ describe('contacts reducer', () => {
     expect(reloading.loading).toBe(true);
   });
 
+  /**
+   * A spinner has to be stopped by something. `debounceSearch` drops a term that is too short to
+   * search with, so no response is coming — and the table must not claim to be loading one.
+   */
+  it('does not claim to be loading for a search that will never be sent', () => {
+    const typing = reducer(initial, contactsPageActions.searchChanged({ search: null }));
+
+    expect(typing.loading).toBe(false);
+  });
+
+  it('claims to be loading as soon as a real search is typed', () => {
+    const typing = reducer(initial, contactsPageActions.searchChanged({ search: 'ba' }));
+
+    expect(typing.loading).toBe(true);
+  });
+
+  it('stops claiming to be loading when the term falls back to the one applied', () => {
+    const applied = reducer(
+      initial,
+      contactsPageActions.queryChanged({ query: { search: 'ber' } }),
+    );
+    const widened = reducer(applied, contactsPageActions.searchChanged({ search: 'berg' }));
+    const backAgain = reducer(widened, contactsPageActions.searchChanged({ search: 'ber' }));
+
+    expect(widened.loading).toBe(true);
+    expect(backAgain.loading).toBe(false);
+  });
+
   it('replaces the previous page instead of accumulating rows', () => {
     const first = reducer(
       initial,

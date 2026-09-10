@@ -1,4 +1,5 @@
 import { ParamMap } from '@angular/router';
+import { toSearchQuery } from './contact-search';
 import { ContactQuery, defaultContactQuery, isSortField } from './contact.model';
 
 /**
@@ -17,7 +18,9 @@ export function parseContactQuery(params: ParamMap): Partial<ContactQuery> {
   const direction = params.get('direction');
 
   return {
-    search: params.get('search')?.slice(0, maximumSearchLength) ?? null,
+    // Held to the same minimum the box is, so a link carrying a single character lands on the
+    // unfiltered list rather than on a search the UI would never have run.
+    search: toSearchQuery(params.get('search')?.slice(0, maximumSearchLength) ?? null),
     sort: isSortField(sort) ? sort : defaultContactQuery.sort,
     direction: direction === 'desc' ? 'desc' : 'asc',
     page: positiveInteger(params.get('page'), defaultContactQuery.page),

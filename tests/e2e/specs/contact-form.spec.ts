@@ -9,6 +9,10 @@ test('creating a contact lands it in the list', async ({ contactsList, contactFo
 
   await contactsList.waitForRows();
 
+  // Searched for rather than expected on the first page: with fifty-five contacts already there,
+  // where a new surname lands depends on the seed, and this spec is about the contact existing.
+  await contactsList.search('Zwart');
+
   await expect(contactsList.rowFor('Zwart')).toBeVisible();
   await expect(contactsList.rowFor('Zwart')).toContainText('NL91****4300');
 });

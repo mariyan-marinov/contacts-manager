@@ -10,6 +10,7 @@ import { ContactsApi } from '../contacts.api';
 import { contactFormActions, contactsApiActions, contactsPageActions } from './contacts.actions';
 import { contactsEffects } from './contacts.effects';
 import { contactsFeature } from './contacts.feature';
+import { searchDebounceMs } from '../contact-search';
 
 const emptyPage: PagedResult<ContactListItem> = { items: [], total: 0, page: 1, size: 20 };
 
@@ -34,6 +35,17 @@ function configure(api: Partial<ContactsApi>): Store {
 
 function run(effect: () => unknown): Observable<unknown> {
   return TestBed.runInInjectionContext(effect) as Observable<unknown>;
+}
+
+/** The app is zoneless, so there is no fakeAsync/tick here — Vitest owns the clock. */
+function withFakeTimers(body: () => void): void {
+  vi.useFakeTimers();
+
+  try {
+    body();
+  } finally {
+    vi.useRealTimers();
+  }
 }
 
 describe('loadContacts', () => {
@@ -110,6 +122,70 @@ describe('debounceSearch', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  /**
+   * A single character is the start of a search rather than a search, so the box sends null and
+   * nothing should be asked for — the list is already unfiltered.
+   */
+  it('asks for nothing when the term settles too short to search with', () => {
+    withFakeTimers(() => {
+      const store = configure({ list: () => of(emptyPage) });
+      const dispatched: unknown[] = [];
+      const subscription = run(contactsEffects.debounceSearch).subscribe((action) =>
+        dispatched.push(action),
+      );
+
+      store.dispatch(contactsPageActions.searchChanged({ search: null }));
+      vi.advanceTimersByTime(searchDebounceMs);
+
+      expect(dispatched).toEqual([]);
+      subscription.unsubscribe();
+    });
+  });
+
+  it('clears the filter when the term drops back below the minimum', () => {
+    withFakeTimers(() => {
+      const store = configure({ list: () => of(emptyPage) });
+      store.dispatch(contactsPageActions.queryChanged({ query: { search: 'ber' } }));
+
+      const dispatched: unknown[] = [];
+      const subscription = run(contactsEffects.debounceSearch).subscribe((action) =>
+        dispatched.push(action),
+      );
+
+      store.dispatch(contactsPageActions.searchChanged({ search: null }));
+      vi.advanceTimersByTime(searchDebounceMs);
+
+      expect(dispatched).toEqual([
+        contactsPageActions.queryChanged({ query: { search: null, page: 1 } }),
+      ]);
+      subscription.unsubscribe();
+    });
+  });
+
+  /**
+   * Typing a letter and deleting it again leaves the term that was already applied. Compared
+   * against the previous keystroke this looked like a change; compared against what is applied it
+   * is not one.
+   */
+  it('asks for nothing when the term settles back on the search already applied', () => {
+    withFakeTimers(() => {
+      const store = configure({ list: () => of(emptyPage) });
+      store.dispatch(contactsPageActions.queryChanged({ query: { search: 'ber' } }));
+
+      const dispatched: unknown[] = [];
+      const subscription = run(contactsEffects.debounceSearch).subscribe((action) =>
+        dispatched.push(action),
+      );
+
+      store.dispatch(contactsPageActions.searchChanged({ search: 'berg' }));
+      store.dispatch(contactsPageActions.searchChanged({ search: 'ber' }));
+      vi.advanceTimersByTime(searchDebounceMs);
+
+      expect(dispatched).toEqual([]);
+      subscription.unsubscribe();
+    });
   });
 });
 

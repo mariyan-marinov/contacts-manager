@@ -7,8 +7,8 @@
       <p class="page-subtitle" role="status" aria-live="polite">
         @if (loading() && total() === 0) {
           Loading…
-        } @else if (searchTerm() !== '') {
-          {{ total() }} {{ total() === 1 ? 'match' : 'matches' }} for “{{ searchTerm() }}”
+        } @else if (appliedSearch(); as search) {
+          {{ total() }} {{ total() === 1 ? 'match' : 'matches' }} for “{{ search }}”
         } @else {
           {{ total() }} {{ total() === 1 ? 'contact' : 'contacts' }} in the address book
         }
@@ -35,8 +35,9 @@
           #searchBox
           pInputText
           type="search"
-          placeholder="Search name or city"
+          placeholder="Search by name or city"
           aria-label="Search contacts"
+          aria-describedby="search-hint"
           [value]="searchTerm()"
           (input)="onSearch(searchBox.value)"
         />
@@ -52,6 +53,14 @@
           (onClick)="onSearch(''); searchBox.value = ''"
         />
       }
+
+      <!-- Always present, so the id the box is described by exists before there is anything to
+           say in it. -->
+      <p class="contacts__search-hint" id="search-hint" role="status" aria-live="polite">
+        @if (searchTooShort()) {
+          Keep typing — {{ searchMinimumLength }} characters or more to search.
+        }
+      </p>
     </div>
 
     <p-table
@@ -73,11 +82,11 @@
     >
       <ng-template #header>
         <tr>
-          <th pSortableColumn="surname">
-            <span class="contacts__column">Surname <p-sort-icon field="surname" /></span>
-          </th>
           <th pSortableColumn="firstName">
             <span class="contacts__column">First name <p-sort-icon field="firstName" /></span>
+          </th>
+          <th pSortableColumn="surname">
+            <span class="contacts__column">Surname <p-sort-icon field="surname" /></span>
           </th>
           <th pSortableColumn="dateOfBirth">
             <span class="contacts__column">Date of birth <p-sort-icon field="dateOfBirth" /></span>
@@ -99,11 +108,17 @@
              add a redundant stop in front of the link and the two buttons in every single row. -->
         <tr class="contacts__row" (click)="onOpen(contact, $event)">
           <td class="contacts__name">
-            <a class="contacts__link" [routerLink]="['/contacts', contact.id]">
-              {{ contact.surname }}
+            <!-- Labelled with the whole name: the cell shows only half of it, and a link read out
+                 as "Sanne" says less than one read out as "Sanne Bakker". -->
+            <a
+              class="contacts__link"
+              [routerLink]="['/contacts', contact.id]"
+              [attr.aria-label]="contact.firstName + ' ' + contact.surname"
+            >
+              {{ contact.firstName }}
             </a>
           </td>
-          <td>{{ contact.firstName }}</td>
+          <td>{{ contact.surname }}</td>
           <td class="contacts__numeric">{{ contact.dateOfBirth }}</td>
           <td>{{ contact.city }}, {{ contact.country }}</td>
           <td class="contacts__numeric">{{ contact.phoneNumber }}</td>
@@ -144,7 +159,7 @@
                 <p>Loading contacts…</p>
               } @else if (emptyReason() === 'no-matches') {
                 <i class="pi pi-search" aria-hidden="true"></i>
-                <p>No contacts match “{{ searchTerm() }}”.</p>
+                <p>No contacts match “{{ appliedSearch() }}”.</p>
                 <p class="contacts__empty-hint">Try a different name or city.</p>
                 <p-button
                   label="Clear search"

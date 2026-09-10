@@ -23,6 +23,8 @@ public class GetContactsQueryTests
         var pageStatement = api.CapturedSql.Statements.Single(sql => sql.Contains("LIMIT", StringComparison.Ordinal));
 
         Assert.Contains("LIKE", pageStatement, StringComparison.Ordinal);
+        // The two name columns are joined by the database, not by pulling rows into memory to do it.
+        Assert.Contains("||", pageStatement, StringComparison.Ordinal);
         Assert.Contains("ORDER BY", pageStatement, StringComparison.Ordinal);
         Assert.Contains("OFFSET", pageStatement, StringComparison.Ordinal);
         Assert.Contains("DESC", pageStatement, StringComparison.Ordinal);
@@ -106,6 +108,35 @@ public class GetContactsQueryTests
         Assert.Empty(page.Items);
     }
 
+    /// <summary>
+    /// The point of matching the joined name: a term can run across the gap between the two
+    /// columns, which is how the list shows the name and so how someone types it.
+    /// </summary>
+    [Theory]
+    [InlineData("nne Bak")]
+    [InlineData("anne Bakker")]
+    [InlineData("Sanne B")]
+    [InlineData("e Bakke")]
+    public async Task Matches_a_term_running_across_the_first_name_and_the_surname(string search)
+    {
+        await using var api = new ContactsApiFactory();
+
+        var page = await Send(api, new GetContactsQuery { Search = search, Size = 100 });
+
+        Assert.Equal("Bakker", Assert.Single(page.Items).Surname);
+    }
+
+    [Fact]
+    public async Task Does_not_match_a_term_spanning_two_different_contacts()
+    {
+        await using var api = new ContactsApiFactory();
+
+        // Bakker is followed by Beran in the default ordering; the two names are not one string.
+        var page = await Send(api, new GetContactsQuery { Search = "Bakker Milan", Size = 100 });
+
+        Assert.Empty(page.Items);
+    }
+
     [Fact]
     public async Task Still_matches_a_plain_substring_of_a_name_or_a_city()
     {
@@ -114,6 +145,26 @@ public class GetContactsQueryTests
         var page = await Send(api, new GetContactsQuery { Search = "bakke", Size = 100 });
 
         Assert.Equal("Bakker", Assert.Single(page.Items).Surname);
+    }
+
+    [Fact]
+    public async Task Still_matches_a_first_name_on_its_own()
+    {
+        await using var api = new ContactsApiFactory();
+
+        var page = await Send(api, new GetContactsQuery { Search = "Sanne", Size = 100 });
+
+        Assert.Equal("Bakker", Assert.Single(page.Items).Surname);
+    }
+
+    [Fact]
+    public async Task Still_matches_a_city_on_its_own()
+    {
+        await using var api = new ContactsApiFactory();
+
+        var page = await Send(api, new GetContactsQuery { Search = "Reykjavik", Size = 100 });
+
+        Assert.Equal("Jonsdottir", Assert.Single(page.Items).Surname);
     }
 
     /// <summary>

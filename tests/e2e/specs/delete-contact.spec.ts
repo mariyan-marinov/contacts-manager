@@ -15,5 +15,7 @@ test('deleting asks first, then removes the row', async ({ contactsList }) => {
   await contactsList.confirmDeletion();
 
   await expect(contactsList.rowFor('Cavendish')).toHaveCount(0);
-  await expect(contactsList.rows()).toHaveCount(11);
+  // The page refills from the fifty-five behind it, so what shrinks is the total rather than the
+  // number of rows on screen.
+  await expect(contactsList.pageReport()).toHaveText('1–20 of 54');
 });

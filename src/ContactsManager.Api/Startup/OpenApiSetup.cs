@@ -138,7 +138,10 @@ internal static class OpenApiSetup
     private static readonly Dictionary<string, (Func<JsonNode> Example, string? Description)> Parameters =
         new(StringComparer.OrdinalIgnoreCase)
         {
-            ["search"] = (() => "bakker", "Case-insensitive substring of the first name, surname or city."),
+            ["search"] = (
+                () => "nne Bak",
+                "Case-insensitive substring of the city, or of the full name written as "
+                    + "\"first surname\" — so a term may run across both name columns."),
             ["sort"] = (() => "surname", "One of surname, firstName, city, dateOfBirth."),
             ["direction"] = (() => "asc", "One of asc, desc."),
             ["page"] = (() => 1, "One-based."),

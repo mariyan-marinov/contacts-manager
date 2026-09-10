@@ -36,6 +36,13 @@ describe('parseContactQuery', () => {
     expect(parseContactQuery(paramsOf({ sort: '1; drop table contacts' })).sort).toBe('surname');
   });
 
+  /** The URL is held to the same minimum the box is, so a link cannot run a search the UI would not. */
+  it('drops a search too short to have been typed into the box', () => {
+    expect(parseContactQuery(paramsOf({ search: 'b' })).search).toBeNull();
+    expect(parseContactQuery(paramsOf({ search: ' b ' })).search).toBeNull();
+    expect(parseContactQuery(paramsOf({ search: 'ba' })).search).toBe('ba');
+  });
+
   it('refuses paging values that are not positive whole numbers', () => {
     expect(parseContactQuery(paramsOf({ page: '0' })).page).toBe(1);
     expect(parseContactQuery(paramsOf({ page: '-2' })).page).toBe(1);

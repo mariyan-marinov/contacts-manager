@@ -66,9 +66,19 @@ export const contactsFeature = createFeature({
       listError: null,
     })),
     on(contactsPageActions.refreshed, (state) => ({ ...state, loading: true, listError: null })),
-    // The search box is ahead of the request by the length of the debounce, so the table says it is
-    // working from the first keystroke rather than sitting still for a third of a second.
-    on(contactsPageActions.searchChanged, (state) => ({ ...state, loading: true })),
+    /**
+     * The box is ahead of the request by the length of the debounce, so the table says it is
+     * working from the first keystroke rather than sitting still for a third of a second.
+     *
+     * Only when the term would actually change what is on screen, though. A term too short to
+     * search with, or the one already applied, will be dropped by `debounceSearch` — starting a
+     * spinner for it would leave one that nothing ever stops. This is the same test the effect
+     * makes, and the two have to agree.
+     */
+    on(contactsPageActions.searchChanged, (state, { search }) => ({
+      ...state,
+      loading: search !== state.query.search,
+    })),
     on(contactsApiActions.loaded, (state, { result }) => ({
       // setAll, not upsert: each page replaces the previous one rather than accumulating.
       ...contactsAdapter.setAll([...result.items], state),
